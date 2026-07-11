@@ -29,6 +29,7 @@ public class ShaderHelper {
         Vector3f texelPos = new Vector3f(viewPos.x(), viewPos.y(), viewPos.z());
         texelPos.mul(0.5f / viewPos.w());
         texelPos.add(0.5f, 0.5f, 0.5f);
+        texelPos.mul(screenWidth, screenHeight, 1);
 
         return texelPos;
     }
