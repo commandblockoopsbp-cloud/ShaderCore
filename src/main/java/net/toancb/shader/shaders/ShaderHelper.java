@@ -14,7 +14,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class ShaderHelper {
     private static final Minecraft mc = Minecraft.getInstance();
 
-    public static Row.R2<Integer, Integer> convertWorldToTexel(MatrixStack matrixStack, Vector3f pos3D, ActiveRenderInfo cam, float partialTick) {
+    public static Vector3f convertWorldToTexel(MatrixStack matrixStack, Vector3f pos3D, ActiveRenderInfo cam, float partialTick) {
         Matrix4f projMatrix = mc.gameRenderer.getProjectionMatrix(cam, partialTick, true);
         Matrix4f modelViewMatrix = matrixStack.last().pose();
         int screenWidth = mc.getWindow().getWidth();
@@ -23,21 +23,13 @@ public class ShaderHelper {
         float relY = (float) (pos3D.y() - cam.getPosition().y);
         float relZ = (float) (pos3D.z() - cam.getPosition().z);
 
-        int texelX = -999;
-        int texelY = -999;
-
         Vector4f viewPos = new Vector4f(relX, relY, relZ, 1.0F);
         viewPos.transform(modelViewMatrix);
         viewPos.transform(projMatrix);
-        Vector3f screenPos = new Vector3f(viewPos.x(), viewPos.y(), viewPos.z());
-        if (viewPos.w() > 0) {
-            screenPos.mul(0.5f / viewPos.w());
-            screenPos.add(0.5f, 0.5f, 0.5f);
+        Vector3f texelPos = new Vector3f(viewPos.x(), viewPos.y(), viewPos.z());
+        texelPos.mul(0.5f / viewPos.w());
+        texelPos.add(0.5f, 0.5f, 0.5f);
 
-            texelX = (int) Math.floor(screenPos.x() * screenWidth + 0.5d);
-            texelY = (int) Math.floor(screenPos.y() * screenHeight + 0.5d);
-        }
-
-        return Row.of(texelX, texelY);
+        return texelPos;
     }
 }
