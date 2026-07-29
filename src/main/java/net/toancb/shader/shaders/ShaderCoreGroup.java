@@ -41,14 +41,10 @@ public class ShaderCoreGroup implements AutoCloseable {
     private Matrix4f shaderOrthoMatrix;
     private int screenWidth;
     private int screenHeight;
-    private float time;
-    private float lastStamp;
 
     public ShaderCoreGroup(TextureManager textureManager, IResourceManager resourceManager, Framebuffer screenTarget, ResourceLocation shaderLocation) throws IOException, JsonSyntaxException {
         this.resourceManager = resourceManager;
         this.screenTarget = screenTarget;
-        this.time = 0.0F;
-        this.lastStamp = 0.0F;
         this.screenWidth = screenTarget.viewWidth;
         this.screenHeight = screenTarget.viewHeight;
         this.name = shaderLocation.toString();
@@ -317,21 +313,9 @@ public class ShaderCoreGroup implements AutoCloseable {
         }
     }
 
-    public void process(float partialTicks, Uniform... uniforms) {
-        if (partialTicks < this.lastStamp) {
-            this.time += 1.0F - this.lastStamp;
-            this.time += partialTicks;
-        } else {
-            this.time += partialTicks - this.lastStamp;
-        }
-
-        this.lastStamp = partialTicks;
-        while (this.time > 20.0F) {
-            this.time -= 20.0F;
-        }
-
+    public void process(Uniform... uniforms) {
         for (ShaderCore shader : this.passes) {
-            shader.process(this.time / 20.0F, uniforms);
+            shader.process(uniforms);
         }
     }
 

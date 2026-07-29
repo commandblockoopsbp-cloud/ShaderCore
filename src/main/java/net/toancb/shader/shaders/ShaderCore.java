@@ -49,7 +49,7 @@ public class ShaderCore implements AutoCloseable {
         this.shaderOrthoMatrix = orthoMatrix;
     }
 
-    public void process(float partialTicks, Uniform... uniforms) {
+    public void process(Uniform... uniforms) {
         this.inTarget.unbindWrite();
 
         float outWidth = (float) this.outTarget.width;
@@ -66,7 +66,6 @@ public class ShaderCore implements AutoCloseable {
         this.effect.safeGetUniform("ProjMat").set(this.shaderOrthoMatrix);
         this.effect.safeGetUniform("InSize").set((float) this.inTarget.width, (float) this.inTarget.height);
         this.effect.safeGetUniform("OutSize").set(outWidth, outHeight);
-        this.effect.safeGetUniform("Time").set(partialTicks);
 
         for (Uniform uniform : uniforms) {
             uniform.apply(this.effect);

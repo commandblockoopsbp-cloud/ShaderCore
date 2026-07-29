@@ -78,12 +78,11 @@ public abstract class ShaderCoreApply {
      * Triggers the ShaderGroup to execute the post-processing pipeline using the captured FBO data,
      * applies any dynamic uniforms provided, and renders the final composited image directly back onto the player's screen.
      *
-     * @param partialTick The frame delta time used for smooth motion interpolation.
      * @param uniforms    Optional dynamic uniforms to apply to the shader passes during processing.
      */
-    public void endShader(float partialTick, Uniform... uniforms) {
+    public void endShader(Uniform... uniforms) {
         if (this.shaderGroup == null) return;
-        this.shaderGroup.process(partialTick, uniforms);
+        this.shaderGroup.process(uniforms);
         mainTarget.bindWrite(true);
     }
 
