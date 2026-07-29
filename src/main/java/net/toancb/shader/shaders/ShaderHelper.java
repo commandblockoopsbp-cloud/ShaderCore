@@ -1,6 +1,5 @@
 package net.toancb.shader.shaders;
 
-import com.ibm.icu.impl.Row;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
