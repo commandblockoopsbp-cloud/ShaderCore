@@ -61,16 +61,16 @@ public class ShaderCore implements AutoCloseable {
 
         for (int i = 0; i < this.auxAssets.size(); ++i) {
             this.effect.setSampler(this.auxNames.get(i), this.auxAssets.get(i));
-            this.effect.addUniform(ShaderCoreUniform.create("AuxSize" + i, UType.IVEC2, 1, this.effect).set(this.auxWidths.get(i), this.auxHeights.get(i)));
+            this.effect.addUniform(ShaderCoreUniform.create("AuxSize" + i, UType.VEC2, 1, this.effect).writeFloat(this.auxWidths.get(i), this.auxHeights.get(i)));
         }
 
-        this.effect.addUniform(ShaderCoreUniform.create("ProjMat", UType.MAT4, 1, this.effect).set(this.shaderOrthoMatrix));
-        this.effect.addUniform(ShaderCoreUniform.create("InSize", UType.IVEC2, 1, this.effect).set(this.inTarget.width, this.inTarget.height));
-        this.effect.addUniform(ShaderCoreUniform.create("OutSize", UType.IVEC2, 1, this.effect).set(outWidth, outHeight));
+        this.effect.addUniform(ShaderCoreUniform.create("ProjMat", UType.MAT4, 1, this.effect).writeMat(this.shaderOrthoMatrix));
+        this.effect.addUniform(ShaderCoreUniform.create("InSize", UType.VEC2, 1, this.effect).writeFloat(this.inTarget.width, this.inTarget.height));
+        this.effect.addUniform(ShaderCoreUniform.create("OutSize", UType.VEC2, 1, this.effect).writeFloat(outWidth, outHeight));
 
         uniform.accept(this.effect);
 
-        this.effect.addUniform(ShaderCoreUniform.create("ScreenSize", UType.IVEC2, 1, this.effect).set(mc.getWindow().getWidth(), mc.getWindow().getHeight()));
+        this.effect.addUniform(ShaderCoreUniform.create("ScreenSize", UType.VEC2, 1, this.effect).writeFloat(mc.getWindow().getWidth(), mc.getWindow().getHeight()));
         this.effect.apply();
 
         this.outTarget.clear(Minecraft.ON_OSX);

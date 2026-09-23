@@ -3,7 +3,6 @@ package net.toancb.shader.shaders;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.shader.IShaderManager;
-import net.minecraft.util.math.vector.Matrix3f;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -86,31 +85,42 @@ public class ShaderCoreUniform implements AutoCloseable {
         return this.name;
     }
 
-    public ShaderCoreUniform set(float... value) {
+    public ShaderCoreUniform writeFloat(float... value) {
+        if (this.floatValues == null) {
+            LOGGER.warn("Attempted to set float values on non-float uniform '{}' (type: {}). Skipping.", this.name, this.type);
+            return this;
+        }
+
         if (value.length < this.count) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, value.length);
-        } else {
-            this.floatValues.position(0);
-            this.floatValues.put(value);
-            this.floatValues.flip();
-            this.markDirty();
+            return this;
         }
+        this.floatValues.position(0);
+        this.floatValues.put(value);
+        this.floatValues.flip();
+        this.markDirty();
         return this;
     }
 
-    public ShaderCoreUniform set(int... value) {
+    public ShaderCoreUniform writeInt(int... value) {
+        if (this.intValues == null) {
+            LOGGER.warn("Attempted to set int values on non-int uniform '{}' (type: {}). Skipping.", this.name, this.type);
+            return this;
+        }
+
         if (value.length < this.count) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, value.length);
-        } else {
-            this.intValues.position(0);
-            this.intValues.put(value);
-            this.intValues.flip();
-            this.markDirty();
+            return this;
         }
+
+        this.intValues.position(0);
+        this.intValues.put(value);
+        this.intValues.flip();
+        this.markDirty();
         return this;
     }
 
-    public ShaderCoreUniform set(Matrix4f matrix4f) {
+    public ShaderCoreUniform writeMat(Matrix4f matrix4f) {
         if (16 < this.count) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, 16);
         } else {

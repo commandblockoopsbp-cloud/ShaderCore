@@ -9,6 +9,8 @@ import net.minecraft.util.math.vector.Vector4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.function.Consumer;
+
 @OnlyIn(Dist.CLIENT)
 public final class ShaderHelper {
     private static final Minecraft mc = Minecraft.getInstance();
@@ -31,5 +33,24 @@ public final class ShaderHelper {
         texelPos.mul(screenWidth, screenHeight, 1);
 
         return texelPos;
+    }
+
+    public static Consumer<ShaderCoreInstance> addDefaultUniform(Matrix4f model, Matrix4f projection) {
+        ActiveRenderInfo cam = mc.gameRenderer.getMainCamera();
+
+        Matrix4f inverseModelMatrix = model.copy();
+        inverseModelMatrix.invert();
+        Matrix4f inverseProjectionMatrix = projection.copy();
+        inverseProjectionMatrix.invert();
+
+        Vector3f camPos = new Vector3f(cam.getPosition());
+
+        return shader -> {
+            shader.addUniform(ShaderCoreUniform.create("ModelViewMatrix", UType.MAT4, 1, shader).writeMat(model));
+            shader.addUniform(ShaderCoreUniform.create("InverseModelViewMatrix", UType.MAT4, 1, shader).writeMat(inverseModelMatrix));
+            shader.addUniform(ShaderCoreUniform.create("ProjectionMatrix", UType.MAT4, 1, shader).writeMat(projection));
+            shader.addUniform(ShaderCoreUniform.create("InverseProjectionMatrix", UType.MAT4, 1, shader).writeMat(inverseProjectionMatrix));
+            shader.addUniform(ShaderCoreUniform.create("CameraPos", UType.VEC3, 1, shader).writeFloat(camPos.x(), camPos.y(), camPos.z()));
+        };
     }
 }
