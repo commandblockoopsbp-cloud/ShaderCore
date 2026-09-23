@@ -32,11 +32,11 @@ public class ShaderCoreUniform implements AutoCloseable {
         this.type = type;
         this.parent = shaderManager;
         if (type.type() <= UType.IVEC4.type()) {
-            this.intValues = MemoryUtil.memAllocInt(count);
+            this.intValues = MemoryUtil.memAllocInt(this.count);
             this.floatValues = null;
         } else {
             this.intValues = null;
-            this.floatValues = MemoryUtil.memAllocFloat(count);
+            this.floatValues = MemoryUtil.memAllocFloat(this.count);
         }
 
         this.location = -1;
