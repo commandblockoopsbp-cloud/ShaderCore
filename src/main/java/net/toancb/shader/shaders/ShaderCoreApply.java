@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException;
 import com.ibm.icu.impl.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
+import net.minecraft.client.shader.IShaderManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -13,14 +14,16 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public abstract class ShaderCoreApply {
+public abstract class ShaderCoreApply implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
     protected static final Minecraft mc = Minecraft.getInstance();
     protected static final Framebuffer mainTarget = mc.getMainRenderTarget();
     private ShaderCoreGroup shaderGroup;
     private final Map<String, Pair<Framebuffer, Boolean>> framebuffers = new HashMap<>();
+    private boolean active = true;
 
     /**
      * Initialization hook that subclasses must implement.
@@ -38,20 +41,19 @@ public abstract class ShaderCoreApply {
     /**
      * Initializes the shader system and automatically maps the auxiliary Framebuffers defined in the JSON.
      *
-     * @param shaderLocation   The path to the shader configuration file (.json)
      * @param framebufferName Variable arguments of pairs containing [Auxiliary FBO Name, Copy Depth Flag]
      */
     @SafeVarargs
-    protected final void initApply(ResourceLocation shaderLocation, Pair<String, Boolean>... framebufferName) {
+    protected final void initApply(Pair<String, Boolean>... framebufferName) {
         if (shaderGroup == null) {
             try {
-                shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), shaderLocation);
+                shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
                 shaderGroup.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
                 for (Pair<String, Boolean> buffer : framebufferName) {
                     framebuffers.put(buffer.first, Pair.of(shaderGroup.getTempTarget(buffer.first), buffer.second));
                 }
             } catch (IOException | JsonSyntaxException e) {
-                LOGGER.warn("Failed to load shader: {}", shaderLocation, e);
+                LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
                 shaderGroup = null;
             }
         }
@@ -63,7 +65,7 @@ public abstract class ShaderCoreApply {
      * from the main screen if requested, prepping them to capture new graphics.
      */
     public void applyShader() {
-        if (this.framebuffers.isEmpty()) return;
+        if (!this.isActive() || this.framebuffers.isEmpty()) return;
         for (Pair<Framebuffer, Boolean> framebuffer : framebuffers.values()) {
             framebuffer.first.clear(Minecraft.ON_OSX);
             if (framebuffer.second) {
@@ -78,13 +80,25 @@ public abstract class ShaderCoreApply {
      * Triggers the ShaderGroup to execute the post-processing pipeline using the captured FBO data,
      * applies any dynamic uniforms provided, and renders the final composited image directly back onto the player's screen.
      *
-     * @param uniforms    Optional dynamic uniforms to apply to the shader passes during processing.
+     * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
      */
-    public void endShader(Uniform... uniforms) {
-        if (this.shaderGroup == null) return;
-        this.shaderGroup.process(uniforms);
+    public void endShader(Consumer<ShaderCoreInstance> uniform) {
+        if (!this.isActive()) return;
+        Consumer<ShaderCoreInstance> consumer = shader -> {
+            onApplyCustomUniform(shader);
+            uniform.accept(shader);
+        };
+        this.shaderGroup.process(consumer);
         mainTarget.bindWrite(true);
     }
+
+    /**
+     * Hook method called when applying custom uniforms to the shader instance.
+     * Subclasses can override this to bind their own custom uniform values.
+     *
+     * @param shader the current shader core instance
+     */
+    protected void onApplyCustomUniform(ShaderCoreInstance shader) {}
 
     /**
      * Redirects the render engine output. Any graphics drawn immediately after this call
@@ -106,7 +120,7 @@ public abstract class ShaderCoreApply {
      * This prevents stretching, distortion, or pixel artifacting.
      */
     public void resize() {
-        if (shaderGroup == null || framebuffers.isEmpty()) return;
+        if (!this.isActive() || framebuffers.isEmpty()) return;
 
         Pair<Framebuffer, Boolean> firstPair = framebuffers.values().iterator().next();
         Framebuffer sampleFbo = firstPair.first;
@@ -118,5 +132,36 @@ public abstract class ShaderCoreApply {
                 this.shaderGroup.resize(width, height);
             }
         }
+    }
+
+    /**
+     * Sets the active state of this shader core.
+     *
+     * @param active true to set as active, false otherwise
+     */
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    /**
+     * Checks whether this shader core is currently active and ready.
+     *
+     * @return true if the shader group is initialized and active, false otherwise
+     */
+    public boolean isActive() {
+        return this.shaderGroup != null && this.active;
+    }
+
+    /**
+     * Closes and releases resources associated with this shader core,
+     * including the shader group and framebuffers.
+     *
+     * @throws Exception if an error occurs during resource closing
+     */
+    public void close() throws Exception {
+        if (this.shaderGroup != null) {
+            this.shaderGroup.close();
+        }
+        this.framebuffers.clear();
     }
 }

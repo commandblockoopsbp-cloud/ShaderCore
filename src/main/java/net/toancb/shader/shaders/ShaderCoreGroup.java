@@ -11,7 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.client.shader.ShaderUniform;
 import net.minecraft.client.util.JSONException;
 import net.minecraft.resources.IResource;
 import net.minecraft.resources.IResourceManager;
@@ -29,6 +28,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
 public class ShaderCoreGroup implements AutoCloseable {
@@ -199,63 +199,6 @@ public class ShaderCoreGroup implements AutoCloseable {
                     ++index;
                 }
             }
-
-            JsonArray uniformsArray = JSONUtils.getAsJsonArray(passObj, "uniforms", (JsonArray) null);
-            if (uniformsArray != null) {
-                int index = 0;
-
-                for (JsonElement uniformElement : uniformsArray) {
-                    try {
-                        this.parseUniformNode(uniformElement);
-                    } catch (Exception e) {
-                        JSONException jsonException = JSONException.forException(e);
-                        jsonException.prependJsonKey("uniforms[" + index + "]");
-                        throw jsonException;
-                    }
-                    ++index;
-                }
-            }
-        }
-    }
-
-    private void parseUniformNode(JsonElement uniformElement) throws JSONException {
-        JsonObject uniformObj = JSONUtils.convertToJsonObject(uniformElement, "uniform");
-        String uniformName = JSONUtils.getAsString(uniformObj, "name");
-        ShaderUniform shaderUniform = this.passes.get(this.passes.size() - 1).getEffect().getUniform(uniformName);
-
-        if (shaderUniform == null) {
-            throw new JSONException("Uniform '" + uniformName + "' does not exist");
-        } else {
-            float[] values = new float[4];
-            int valueCount = 0;
-
-            for (JsonElement valueElement : JSONUtils.getAsJsonArray(uniformObj, "values")) {
-                try {
-                    values[valueCount] = JSONUtils.convertToFloat(valueElement, "value");
-                } catch (Exception e) {
-                    JSONException jsonException = JSONException.forException(e);
-                    jsonException.prependJsonKey("values[" + valueCount + "]");
-                    throw jsonException;
-                }
-                ++valueCount;
-            }
-
-            switch (valueCount) {
-                case 1:
-                    shaderUniform.set(values[0]);
-                    break;
-                case 2:
-                    shaderUniform.set(values[0], values[1]);
-                    break;
-                case 3:
-                    shaderUniform.set(values[0], values[1], values[2]);
-                    break;
-                case 4:
-                    shaderUniform.set(values[0], values[1], values[2], values[3]);
-                    break;
-                default:
-                    break;
-            }
         }
     }
 
@@ -313,9 +256,9 @@ public class ShaderCoreGroup implements AutoCloseable {
         }
     }
 
-    public void process(Uniform... uniforms) {
+    public void process(Consumer<ShaderCoreInstance> uniform) {
         for (ShaderCore shader : this.passes) {
-            shader.process(uniforms);
+            shader.process(uniform);
         }
     }
 

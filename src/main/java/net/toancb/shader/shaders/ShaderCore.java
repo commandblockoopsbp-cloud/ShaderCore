@@ -8,20 +8,21 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.client.shader.ShaderInstance;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
 @OnlyIn(Dist.CLIENT)
 public class ShaderCore implements AutoCloseable {
-    private final ShaderInstance effect;
+    private final ShaderCoreInstance effect;
     public final Framebuffer inTarget;
     public final Framebuffer outTarget;
+    private final static Minecraft mc = Minecraft.getInstance();
     private final List<IntSupplier> auxAssets = Lists.newArrayList();
     private final List<String> auxNames = Lists.newArrayList();
     private final List<Integer> auxWidths = Lists.newArrayList();
@@ -29,7 +30,7 @@ public class ShaderCore implements AutoCloseable {
     private Matrix4f shaderOrthoMatrix;
 
     public ShaderCore(IResourceManager resourceManager, String shaderName, Framebuffer inputTarget, Framebuffer outputTarget) throws IOException {
-        this.effect = new ShaderInstance(resourceManager, shaderName);
+        this.effect = new ShaderCoreInstance(resourceManager, shaderName);
         this.inTarget = inputTarget;
         this.outTarget = outputTarget;
     }
@@ -49,30 +50,27 @@ public class ShaderCore implements AutoCloseable {
         this.shaderOrthoMatrix = orthoMatrix;
     }
 
-    public void process(Uniform... uniforms) {
+    public void process(Consumer<ShaderCoreInstance> uniform) {
         this.inTarget.unbindWrite();
 
-        float outWidth = (float) this.outTarget.width;
-        float outHeight = (float) this.outTarget.height;
+        int outWidth = this.outTarget.width;
+        int outHeight = this.outTarget.height;
 
-        RenderSystem.viewport(0, 0, (int) outWidth, (int) outHeight);
+        RenderSystem.viewport(0, 0, outWidth, outHeight);
         this.effect.setSampler("DiffuseSampler", this.inTarget::getColorTextureId);
 
         for (int i = 0; i < this.auxAssets.size(); ++i) {
             this.effect.setSampler(this.auxNames.get(i), this.auxAssets.get(i));
-            this.effect.safeGetUniform("AuxSize" + i).set((float) this.auxWidths.get(i).intValue(), (float) this.auxHeights.get(i).intValue());
+            this.effect.addUniform(ShaderCoreUniform.create("AuxSize" + i, UType.IVEC2, 1, this.effect).set(this.auxWidths.get(i), this.auxHeights.get(i)));
         }
 
-        this.effect.safeGetUniform("ProjMat").set(this.shaderOrthoMatrix);
-        this.effect.safeGetUniform("InSize").set((float) this.inTarget.width, (float) this.inTarget.height);
-        this.effect.safeGetUniform("OutSize").set(outWidth, outHeight);
+        this.effect.addUniform(ShaderCoreUniform.create("ProjMat", UType.MAT4, 1, this.effect).set(this.shaderOrthoMatrix));
+        this.effect.addUniform(ShaderCoreUniform.create("InSize", UType.IVEC2, 1, this.effect).set(this.inTarget.width, this.inTarget.height));
+        this.effect.addUniform(ShaderCoreUniform.create("OutSize", UType.IVEC2, 1, this.effect).set(outWidth, outHeight));
 
-        for (Uniform uniform : uniforms) {
-            uniform.apply(this.effect);
-        }
+        uniform.accept(this.effect);
 
-        Minecraft minecraft = Minecraft.getInstance();
-        this.effect.safeGetUniform("ScreenSize").set((float) minecraft.getWindow().getWidth(), (float) minecraft.getWindow().getHeight());
+        this.effect.addUniform(ShaderCoreUniform.create("ScreenSize", UType.IVEC2, 1, this.effect).set(mc.getWindow().getWidth(), mc.getWindow().getHeight()));
         this.effect.apply();
 
         this.outTarget.clear(Minecraft.ON_OSX);
@@ -82,9 +80,9 @@ public class ShaderCore implements AutoCloseable {
         BufferBuilder bufferbuilder = Tessellator.getInstance().getBuilder();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
         bufferbuilder.vertex(0.0D, 0.0D, 500.0D).color(255, 255, 255, 255).endVertex();
-        bufferbuilder.vertex((double) outWidth, 0.0D, 500.0D).color(255, 255, 255, 255).endVertex();
-        bufferbuilder.vertex((double) outWidth, (double) outHeight, 500.0D).color(255, 255, 255, 255).endVertex();
-        bufferbuilder.vertex(0.0D, (double) outHeight, 500.0D).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.vertex(outWidth, 0.0D, 500.0D).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.vertex(outWidth, outHeight, 500.0D).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.vertex(0.0D, outHeight, 500.0D).color(255, 255, 255, 255).endVertex();
         bufferbuilder.end();
 
         WorldVertexBufferUploader.end(bufferbuilder);
@@ -100,7 +98,7 @@ public class ShaderCore implements AutoCloseable {
         }
     }
 
-    public ShaderInstance getEffect() {
+    public ShaderCoreInstance getEffect() {
         return this.effect;
     }
 }
