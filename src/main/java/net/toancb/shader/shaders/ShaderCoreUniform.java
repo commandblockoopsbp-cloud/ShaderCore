@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.system.MemoryUtil;
 
+import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
@@ -95,9 +96,9 @@ public class ShaderCoreUniform implements AutoCloseable {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, value.length);
             return this;
         }
-        this.floatValues.position(0);
-        this.floatValues.put(value);
-        this.floatValues.flip();
+        ((Buffer) this.floatValues).position(0);
+        this.floatValues.put(value, 0, this.count);
+        ((Buffer) this.floatValues).position(0);
         this.markDirty();
         return this;
     }
@@ -113,9 +114,9 @@ public class ShaderCoreUniform implements AutoCloseable {
             return this;
         }
 
-        this.intValues.position(0);
-        this.intValues.put(value);
-        this.intValues.flip();
+        ((Buffer) this.intValues).position(0);
+        this.intValues.put(value, 0, this.count);
+        ((Buffer) this.intValues).position(0);
         this.markDirty();
         return this;
     }
