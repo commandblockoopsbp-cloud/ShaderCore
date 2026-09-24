@@ -13,6 +13,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 
 @OnlyIn(Dist.CLIENT)
 public class ShaderCoreUniform implements AutoCloseable {
@@ -26,6 +27,8 @@ public class ShaderCoreUniform implements AutoCloseable {
     private boolean dirty;
     private final IShaderManager parent;
 
+    public static final ShaderCoreUniform DUMMY = new ShaderCoreUniform("dummy", UType.FLOAT, 1, null);
+
     private ShaderCoreUniform(String name, UType type, int count, IShaderManager shaderManager) {
         this.name = name;
         this.count = count * type.count();
@@ -34,9 +37,15 @@ public class ShaderCoreUniform implements AutoCloseable {
         if (type.type() <= UType.IVEC4.type()) {
             this.intValues = MemoryUtil.memAllocInt(this.count);
             this.floatValues = null;
+            int[] ints = new int[this.count];
+            Arrays.fill(ints, 1);
+            this.writeInt(ints);
         } else {
             this.intValues = null;
             this.floatValues = MemoryUtil.memAllocFloat(this.count);
+            float[] floats = new float[this.count];
+            Arrays.fill(floats, 1f);
+            this.writeFloat(floats);
         }
 
         this.location = -1;
@@ -98,7 +107,7 @@ public class ShaderCoreUniform implements AutoCloseable {
         }
         ((Buffer) this.floatValues).position(0);
         this.floatValues.put(value, 0, this.count);
-        ((Buffer) this.floatValues).position(0);
+        ((Buffer) this.floatValues).flip();
         this.markDirty();
         return this;
     }
@@ -116,7 +125,7 @@ public class ShaderCoreUniform implements AutoCloseable {
 
         ((Buffer) this.intValues).position(0);
         this.intValues.put(value, 0, this.count);
-        ((Buffer) this.intValues).position(0);
+        ((Buffer) this.intValues).flip();
         this.markDirty();
         return this;
     }
@@ -125,8 +134,9 @@ public class ShaderCoreUniform implements AutoCloseable {
         if (16 < this.count) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, 16);
         } else {
-            this.floatValues.position(0);
+            ((Buffer) this.floatValues).position(0);
             matrix4f.store(this.floatValues);
+            ((Buffer) this.floatValues).flip();
             this.markDirty();
         }
         return this;

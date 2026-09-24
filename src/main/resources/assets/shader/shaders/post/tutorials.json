@@ -1,0 +1,24 @@
+{
+  "targets": [
+    "swap",
+    "tuto"
+  ],
+  "passes": [
+    {
+      "name": "shader:tutorials",
+      "intarget": "minecraft:main",
+      "outtarget": "swap",
+      "auxtargets": [
+        {
+          "name": "DiffuseDepthSampler",
+          "id": "minecraft:main:depth"
+        }
+      ]
+    },
+    {
+      "name": "shader:blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

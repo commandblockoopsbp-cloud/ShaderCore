@@ -50,27 +50,34 @@ public class ShaderCore implements AutoCloseable {
         this.shaderOrthoMatrix = orthoMatrix;
     }
 
-    public void process(Consumer<ShaderCoreInstance> uniform) {
-        this.inTarget.unbindWrite();
-
+    public void addOrRunUniform(Consumer<ShaderCoreInstance> uniform) {
         int outWidth = this.outTarget.width;
         int outHeight = this.outTarget.height;
 
-        RenderSystem.viewport(0, 0, outWidth, outHeight);
         this.effect.setSampler("DiffuseSampler", this.inTarget::getColorTextureId);
 
         for (int i = 0; i < this.auxAssets.size(); ++i) {
             this.effect.setSampler(this.auxNames.get(i), this.auxAssets.get(i));
-            this.effect.addUniform(ShaderCoreUniform.create("AuxSize" + i, UType.VEC2, 1, this.effect).writeFloat(this.auxWidths.get(i), this.auxHeights.get(i)));
+            this.effect.getOrCreateUniform("AuxSize" + i, UType.VEC2).writeFloat(this.auxWidths.get(i), this.auxHeights.get(i));
         }
 
-        this.effect.addUniform(ShaderCoreUniform.create("ProjMat", UType.MAT4, 1, this.effect).writeMat(this.shaderOrthoMatrix));
-        this.effect.addUniform(ShaderCoreUniform.create("InSize", UType.VEC2, 1, this.effect).writeFloat(this.inTarget.width, this.inTarget.height));
-        this.effect.addUniform(ShaderCoreUniform.create("OutSize", UType.VEC2, 1, this.effect).writeFloat(outWidth, outHeight));
+        this.effect.getOrCreateUniform("ProjMat", UType.MAT4).writeMat(this.shaderOrthoMatrix);
+        this.effect.getOrCreateUniform("InSize", UType.VEC2).writeFloat(this.inTarget.width, this.inTarget.height);
+        this.effect.getOrCreateUniform("OutSize", UType.VEC2).writeFloat(outWidth, outHeight);
 
-        uniform.accept(this.effect);
+        if (uniform != null) uniform.accept(this.effect);
 
-        this.effect.addUniform(ShaderCoreUniform.create("ScreenSize", UType.VEC2, 1, this.effect).writeFloat(mc.getWindow().getWidth(), mc.getWindow().getHeight()));
+        this.effect.getOrCreateUniform("ScreenSize", UType.VEC2).writeFloat(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+    }
+
+    public void process(Consumer<ShaderCoreInstance> uniform) {
+        this.inTarget.unbindWrite();
+        int outWidth = this.outTarget.width;
+        int outHeight = this.outTarget.height;
+        RenderSystem.viewport(0, 0, outWidth, outHeight);
+
+        this.addOrRunUniform(uniform);
+
         this.effect.apply();
 
         this.outTarget.clear(Minecraft.ON_OSX);

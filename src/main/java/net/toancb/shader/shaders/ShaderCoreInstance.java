@@ -10,9 +10,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.client.shader.IShaderManager;
-import net.minecraft.client.shader.ShaderLinkHelper;
-import net.minecraft.client.shader.ShaderLoader;
+import net.minecraft.client.shader.*;
 import net.minecraft.client.util.JSONBlendingMode;
 import net.minecraft.client.util.JSONException;
 import net.minecraft.resources.IResource;
@@ -259,9 +257,27 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
         }
     }
 
-    public void addUniform(ShaderCoreUniform shaderCoreUniform) {
-        if (shaderCoreUniform == null || this.uniforms.containsKey(shaderCoreUniform.getName())) return;
-        this.uniforms.put(shaderCoreUniform.getName(), shaderCoreUniform);
+    public ShaderCoreUniform getOrCreateUniform(String name, UType type, int count) {
+        if (this.uniforms.containsKey(name)) {
+            return this.uniforms.get(name);
+        }
+
+        int location = ShaderCoreUniform.glGetUniformLocation(this.programId, name);
+        if (location == -1) {
+            LOGGER.warn("Shader {} could not find uniform named {} in the specified program.", this.name, name);
+            this.uniforms.put(name, ShaderCoreUniform.DUMMY);
+            return ShaderCoreUniform.DUMMY;
+        }
+
+        ShaderCoreUniform shaderCoreUniform = ShaderCoreUniform.create(name, type, count, this);
+        shaderCoreUniform.setLocation(location);
+        this.uniforms.put(name, shaderCoreUniform);
+
+        return shaderCoreUniform;
+    }
+
+    public ShaderCoreUniform getOrCreateUniform(String name, UType type) {
+        return this.getOrCreateUniform(name, type, 1);
     }
 
     public void markDirty() {
@@ -274,7 +290,7 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
 
         for(int i = 0; i < this.samplerNames.size(); ++i) {
             String s = this.samplerNames.get(i);
-            int j = ShaderCoreUniform.glGetUniformLocation(this.programId, s);
+            int j = ShaderUniform.glGetUniformLocation(this.programId, s);
             if (j == -1) {
                 LOGGER.warn("Shader {} could not find sampler named {} in the specified shader program.", this.name, s);
                 this.samplerMap.remove(s);
@@ -288,13 +304,13 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
             this.samplerNames.remove(intlist.getInt(l));
         }
 
-        for(ShaderCoreUniform shaderCoreUniform : this.uniforms.values()) {
-            String s1 = shaderCoreUniform.getName();
-            int k = ShaderCoreUniform.glGetUniformLocation(this.programId, s1);
+        for(ShaderCoreUniform shaderuniform : this.uniforms.values()) {
+            String s1 = shaderuniform.getName();
+            int k = ShaderUniform.glGetUniformLocation(this.programId, s1);
             if (k == -1) {
-                LOGGER.warn("Could not find uniform named {} in the specified shader program.", s1);
+                LOGGER.warn("Could not find uniform named {} in the specified shader program.", (Object)s1);
             } else {
-                shaderCoreUniform.setLocation(k);
+                shaderuniform.setLocation(k);
             }
         }
     }

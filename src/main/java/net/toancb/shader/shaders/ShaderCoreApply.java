@@ -1,29 +1,57 @@
 package net.toancb.shader.shaders;
 
 import com.google.gson.JsonSyntaxException;
-import com.ibm.icu.impl.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.client.shader.IShaderManager;
+import net.minecraft.resources.IReloadableResourceManager;
+import net.minecraft.resources.IResourceManager;
+import net.minecraft.resources.IResourceManagerReloadListener;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+@SuppressWarnings("deprecation")
 @OnlyIn(Dist.CLIENT)
-public abstract class ShaderCoreApply implements AutoCloseable {
+public abstract class ShaderCoreApply implements AutoCloseable, IResourceManagerReloadListener {
     private static final Logger LOGGER = LogManager.getLogger();
     protected static final Minecraft mc = Minecraft.getInstance();
     protected static final Framebuffer mainTarget = mc.getMainRenderTarget();
     private ShaderCoreGroup shaderGroup;
-    private final Map<String, Pair<Framebuffer, Boolean>> framebuffers = new HashMap<>();
+    private final Map<String, AuxTarget> framebuffers = new HashMap<>();
     private boolean active = true;
+    private boolean isRegistered = false;
+
+    protected static class AuxConfig {
+        public final String name;
+        public final boolean copyDepth;
+
+        public AuxConfig(String name, boolean copyDepth) {
+            this.name = name;
+            this.copyDepth = copyDepth;
+        }
+
+        public static AuxConfig of(String name, boolean copyDepth) {
+            return new AuxConfig(name, copyDepth);
+        }
+    }
+
+    private static class AuxTarget {
+        public final Framebuffer framebuffer;
+        public final boolean copyDepth;
+
+        public AuxTarget(Framebuffer framebuffer, boolean copyDepth) {
+            this.framebuffer = framebuffer;
+            this.copyDepth = copyDepth;
+        }
+    }
 
     /**
      * Initialization hook that subclasses must implement.
@@ -43,14 +71,17 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      *
      * @param framebufferName Variable arguments of pairs containing [Auxiliary FBO Name, Copy Depth Flag]
      */
-    @SafeVarargs
-    protected final void initApply(Pair<String, Boolean>... framebufferName) {
+    protected final void initApply(AuxConfig... framebufferName) {
+        if (!isRegistered) {
+            this.registerReloadListener();
+            this.isRegistered = true;
+        }
         if (shaderGroup == null) {
             try {
                 shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
                 shaderGroup.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
-                for (Pair<String, Boolean> buffer : framebufferName) {
-                    framebuffers.put(buffer.first, Pair.of(shaderGroup.getTempTarget(buffer.first), buffer.second));
+                for (AuxConfig buffer : framebufferName) {
+                    framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth));
                 }
             } catch (IOException | JsonSyntaxException e) {
                 LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
@@ -66,10 +97,10 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      */
     public void applyShader() {
         if (!this.isActive() || this.framebuffers.isEmpty()) return;
-        for (Pair<Framebuffer, Boolean> framebuffer : framebuffers.values()) {
-            framebuffer.first.clear(Minecraft.ON_OSX);
-            if (framebuffer.second) {
-                framebuffer.first.copyDepthFrom(mainTarget);
+        for (AuxTarget framebuffer : framebuffers.values()) {
+            framebuffer.framebuffer.clear(Minecraft.ON_OSX);
+            if (framebuffer.copyDepth) {
+                framebuffer.framebuffer.copyDepthFrom(mainTarget);
             }
         }
         mainTarget.bindWrite(false);
@@ -86,7 +117,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
         if (!this.isActive()) return;
         Consumer<ShaderCoreInstance> consumer = shader -> {
             onApplyCustomUniform(shader);
-            uniform.accept(shader);
+            if (uniform != null) uniform.accept(shader);
         };
         this.shaderGroup.process(consumer);
         mainTarget.bindWrite(true);
@@ -107,9 +138,9 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * @param bufferName The target identifier string of the auxiliary Framebuffer.
      */
     public void writeFramebuffer(String bufferName) {
-        Pair<Framebuffer, Boolean> first = framebuffers.get(bufferName);
+        AuxTarget first = framebuffers.get(bufferName);
         if (first == null) return;
-        Framebuffer framebuffer = first.first;
+        Framebuffer framebuffer = first.framebuffer;
         if (framebuffer == null) return;
         framebuffer.bindWrite(false);
     }
@@ -122,8 +153,8 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     public void resize() {
         if (!this.isActive() || framebuffers.isEmpty()) return;
 
-        Pair<Framebuffer, Boolean> firstPair = framebuffers.values().iterator().next();
-        Framebuffer sampleFbo = firstPair.first;
+        AuxTarget firstPair = framebuffers.values().iterator().next();
+        Framebuffer sampleFbo = firstPair.framebuffer;
 
         if (sampleFbo != null) {
             int width = mc.getWindow().getWidth();
@@ -155,13 +186,25 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     /**
      * Closes and releases resources associated with this shader core,
      * including the shader group and framebuffers.
-     *
-     * @throws Exception if an error occurs during resource closing
      */
-    public void close() throws Exception {
+    public void close() {
         if (this.shaderGroup != null) {
             this.shaderGroup.close();
+            this.shaderGroup = null;
         }
         this.framebuffers.clear();
+    }
+
+    public void registerReloadListener() {
+        if (mc.getResourceManager() instanceof IReloadableResourceManager) {
+            IReloadableResourceManager resourceManager = (IReloadableResourceManager) mc.getResourceManager();
+            resourceManager.registerReloadListener(this);
+        }
+    }
+
+    public void onResourceManagerReload(@Nonnull IResourceManager resourceManager) {
+        LOGGER.info("[F3 + T] Reloading Shader System for: {}", this.getShaderLocation());
+        this.close();
+        this.init();
     }
 }

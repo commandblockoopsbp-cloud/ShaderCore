@@ -46,11 +46,11 @@ public final class ShaderHelper {
         Vector3f camPos = new Vector3f(cam.getPosition());
 
         return shader -> {
-            shader.addUniform(ShaderCoreUniform.create("ModelViewMatrix", UType.MAT4, 1, shader).writeMat(model));
-            shader.addUniform(ShaderCoreUniform.create("InverseModelViewMatrix", UType.MAT4, 1, shader).writeMat(inverseModelMatrix));
-            shader.addUniform(ShaderCoreUniform.create("ProjectionMatrix", UType.MAT4, 1, shader).writeMat(projection));
-            shader.addUniform(ShaderCoreUniform.create("InverseProjectionMatrix", UType.MAT4, 1, shader).writeMat(inverseProjectionMatrix));
-            shader.addUniform(ShaderCoreUniform.create("CameraPos", UType.VEC3, 1, shader).writeFloat(camPos.x(), camPos.y(), camPos.z()));
+            shader.getOrCreateUniform("ModelViewMatrix", UType.MAT4).writeMat(model);
+            shader.getOrCreateUniform("InverseModelViewMatrix", UType.MAT4).writeMat(inverseModelMatrix);
+            shader.getOrCreateUniform("ProjectionMatrix", UType.MAT4).writeMat(projection);
+            shader.getOrCreateUniform("InverseProjectionMatrix", UType.MAT4).writeMat(inverseProjectionMatrix);
+            shader.getOrCreateUniform("CameraPos", UType.VEC3).writeFloat(camPos.x(), camPos.y(), camPos.z());
         };
     }
 }
