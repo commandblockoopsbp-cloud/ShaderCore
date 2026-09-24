@@ -103,7 +103,7 @@ public class ShaderCoreUniform implements AutoCloseable {
         }
         ((Buffer) this.floatValues).position(0);
         this.floatValues.put(value);
-        ((Buffer) this.floatValues).position(0);
+        ((Buffer) this.floatValues).flip();
         this.markDirty();
     }
 
@@ -122,12 +122,16 @@ public class ShaderCoreUniform implements AutoCloseable {
 
         ((Buffer) this.intValues).position(0);
         this.intValues.put(value);
-        ((Buffer) this.intValues).position(0);
+        ((Buffer) this.intValues).flip();
         this.markDirty();
     }
 
     public void writeMat(Matrix4f matrix4f) {
         if (this == DUMMY) return;
+        if (this.count > UType.MAT4.count()) {
+            LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, UType.MAT4.count());
+            return;
+        }
 
         ((Buffer) this.floatValues).position(0);
         matrix4f.store(this.floatValues);
