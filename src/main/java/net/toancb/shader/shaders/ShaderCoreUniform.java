@@ -95,51 +95,47 @@ public class ShaderCoreUniform implements AutoCloseable {
         return this.name;
     }
 
-    public ShaderCoreUniform writeFloat(float... value) {
+    public void writeFloat(float... value) {
         if (this.floatValues == null) {
             LOGGER.warn("Attempted to set float values on non-float uniform '{}' (type: {}). Skipping.", this.name, this.type);
-            return this;
+            return;
         }
 
-        if (value.length < this.count) {
+        if (this.count > value.length) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, value.length);
-            return this;
+            return;
         }
         ((Buffer) this.floatValues).position(0);
         this.floatValues.put(value, 0, this.count);
         ((Buffer) this.floatValues).flip();
         this.markDirty();
-        return this;
     }
 
-    public ShaderCoreUniform writeInt(int... value) {
+    public void writeInt(int... value) {
         if (this.intValues == null) {
             LOGGER.warn("Attempted to set int values on non-int uniform '{}' (type: {}). Skipping.", this.name, this.type);
-            return this;
+            return;
         }
 
-        if (value.length < this.count) {
+        if (this.count > value.length) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, value.length);
-            return this;
+            return;
         }
 
         ((Buffer) this.intValues).position(0);
         this.intValues.put(value, 0, this.count);
         ((Buffer) this.intValues).flip();
         this.markDirty();
-        return this;
     }
 
-    public ShaderCoreUniform writeMat(Matrix4f matrix4f) {
-        if (16 < this.count) {
+    public void writeMat(Matrix4f matrix4f) {
+        if (this.count > 16) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, 16);
         } else {
             ((Buffer) this.floatValues).position(0);
             matrix4f.store(this.floatValues);
-            ((Buffer) this.floatValues).flip();
             this.markDirty();
         }
-        return this;
     }
 
     public void upload() {
