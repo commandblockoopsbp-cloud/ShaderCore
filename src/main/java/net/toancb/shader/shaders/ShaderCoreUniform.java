@@ -90,6 +90,8 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeFloat(float... value) {
+        if (this == DUMMY) return;
+
         if (this.floatValues == null) {
             LOGGER.warn("Attempted to set float values on non-float uniform '{}' (type: {}). Skipping.", this.name, this.type);
             return;
@@ -106,6 +108,8 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeInt(int... value) {
+        if (this == DUMMY) return;
+
         if (this.intValues == null) {
             LOGGER.warn("Attempted to set int values on non-int uniform '{}' (type: {}). Skipping.", this.name, this.type);
             return;
@@ -123,6 +127,8 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeMat(Matrix4f matrix4f) {
+        if (this == DUMMY) return;
+
         ((Buffer) this.floatValues).position(0);
         matrix4f.store(this.floatValues);
         this.markDirty();
