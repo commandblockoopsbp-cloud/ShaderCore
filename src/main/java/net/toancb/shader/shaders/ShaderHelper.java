@@ -3,17 +3,20 @@ package net.toancb.shader.shaders;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.math.vector.Vector4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
 public final class ShaderHelper {
     private static final Minecraft mc = Minecraft.getInstance();
+    private static boolean wasF9Pressed = false;
 
     public static Vector3f convertWorldToTexel(MatrixStack matrixStack, Vector3f pos3D, ActiveRenderInfo cam, float partialTick) {
         Matrix4f projMatrix = mc.gameRenderer.getProjectionMatrix(cam, partialTick, true);
@@ -52,5 +55,17 @@ public final class ShaderHelper {
             shader.getOrCreateUniform("InverseProjectionMatrix", UType.MAT4).writeMat(inverseProjectionMatrix);
             shader.getOrCreateUniform("CameraPos", UType.VEC3).writeFloat(camPos.x(), camPos.y(), camPos.z());
         };
+    }
+
+    public static void fastReloadShaders(ShaderCoreApply shader) {
+        if (shader == null) return;
+
+        boolean isF9Down = InputMappings.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_F9);
+
+        if (isF9Down && !wasF9Pressed) {
+            shader.close();
+        }
+
+        wasF9Pressed = isF9Down;
     }
 }

@@ -264,7 +264,6 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
 
         int location = ShaderCoreUniform.glGetUniformLocation(this.programId, name);
         if (location == -1) {
-            LOGGER.warn("Shader {} could not find uniform named {} in the specified program.", this.name, name);
             this.uniforms.put(name, ShaderCoreUniform.DUMMY);
             return ShaderCoreUniform.DUMMY;
         }

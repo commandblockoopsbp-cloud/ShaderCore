@@ -18,16 +18,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@SuppressWarnings("deprecation")
 @OnlyIn(Dist.CLIENT)
-public abstract class ShaderCoreApply implements AutoCloseable, IResourceManagerReloadListener {
+public abstract class ShaderCoreApply implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
     protected static final Minecraft mc = Minecraft.getInstance();
     protected static final Framebuffer mainTarget = mc.getMainRenderTarget();
     private ShaderCoreGroup shaderGroup;
     private final Map<String, AuxTarget> framebuffers = new HashMap<>();
     private boolean active = true;
-    private boolean isRegistered = false;
+    private boolean hasError = false;
+    private static long pastTime = System.currentTimeMillis();
 
     protected static class AuxConfig {
         public final String name;
@@ -72,20 +72,24 @@ public abstract class ShaderCoreApply implements AutoCloseable, IResourceManager
      * @param framebufferName Variable arguments of pairs containing [Auxiliary FBO Name, Copy Depth Flag]
      */
     protected final void initApply(AuxConfig... framebufferName) {
-        if (!isRegistered) {
-            this.registerReloadListener();
-            this.isRegistered = true;
+        if (this.shaderGroup != null) return;
+        if (System.currentTimeMillis() - pastTime > 1000) {
+            pastTime = System.currentTimeMillis();
+            this.hasError = false;
         }
-        if (shaderGroup == null) {
+        if (!hasError) {
             try {
                 shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
                 shaderGroup.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+                this.framebuffers.clear();
                 for (AuxConfig buffer : framebufferName) {
                     framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth));
                 }
             } catch (IOException | JsonSyntaxException e) {
                 LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
                 shaderGroup = null;
+                this.framebuffers.clear();
+                this.hasError = true;
             }
         }
     }
@@ -193,18 +197,5 @@ public abstract class ShaderCoreApply implements AutoCloseable, IResourceManager
             this.shaderGroup = null;
         }
         this.framebuffers.clear();
-    }
-
-    public void registerReloadListener() {
-        if (mc.getResourceManager() instanceof IReloadableResourceManager) {
-            IReloadableResourceManager resourceManager = (IReloadableResourceManager) mc.getResourceManager();
-            resourceManager.registerReloadListener(this);
-        }
-    }
-
-    public void onResourceManagerReload(@Nonnull IResourceManager resourceManager) {
-        LOGGER.info("[F3 + T] Reloading Shader System for: {}", this.getShaderLocation());
-        this.close();
-        this.init();
     }
 }
