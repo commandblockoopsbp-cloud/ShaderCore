@@ -123,13 +123,9 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeMat(Matrix4f matrix4f) {
-        if (this.count > UType.MAT4.count()) {
-            LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, 16);
-        } else {
-            ((Buffer) this.floatValues).position(0);
-            matrix4f.store(this.floatValues);
-            this.markDirty();
-        }
+        ((Buffer) this.floatValues).position(0);
+        matrix4f.store(this.floatValues);
+        this.markDirty();
     }
 
     public void upload() {
@@ -154,7 +150,7 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     private void uploadAsInteger() {
-        this.intValues.clear();
+        ((Buffer) this.intValues).clear();
         switch(this.type) {
             case INT:
                 RenderSystem.glUniform1(this.location, this.intValues);
@@ -175,7 +171,7 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     private void uploadAsFloat() {
-        this.floatValues.clear();
+        ((Buffer) this.floatValues).clear();
         switch(this.type) {
             case FLOAT:
                 RenderSystem.glUniform1(this.location, this.floatValues);
@@ -196,7 +192,7 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     private void uploadAsMatrix() {
-        this.floatValues.clear();
+        ((Buffer) this.floatValues).clear();
         switch(this.type) {
             case MAT2:
                 RenderSystem.glUniformMatrix2(this.location, false, this.floatValues);
