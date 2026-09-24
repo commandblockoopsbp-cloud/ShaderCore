@@ -101,7 +101,7 @@ public class ShaderCoreUniform implements AutoCloseable {
         }
         ((Buffer) this.floatValues).position(0);
         this.floatValues.put(value, 0, this.count);
-        ((Buffer) this.floatValues).flip();
+        ((Buffer) this.floatValues).position(0);
         this.markDirty();
     }
 
@@ -118,7 +118,7 @@ public class ShaderCoreUniform implements AutoCloseable {
 
         ((Buffer) this.intValues).position(0);
         this.intValues.put(value, 0, this.count);
-        ((Buffer) this.intValues).flip();
+        ((Buffer) this.intValues).position(0);
         this.markDirty();
     }
 
