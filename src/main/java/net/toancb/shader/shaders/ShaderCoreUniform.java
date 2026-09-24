@@ -37,15 +37,9 @@ public class ShaderCoreUniform implements AutoCloseable {
         if (type.type() <= UType.IVEC4.type()) {
             this.intValues = MemoryUtil.memAllocInt(this.count);
             this.floatValues = null;
-            int[] ints = new int[this.count];
-            Arrays.fill(ints, 1);
-            this.writeInt(ints);
         } else {
             this.intValues = null;
             this.floatValues = MemoryUtil.memAllocFloat(this.count);
-            float[] floats = new float[this.count];
-            Arrays.fill(floats, 1f);
-            this.writeFloat(floats);
         }
 
         this.location = -1;
@@ -129,7 +123,7 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeMat(Matrix4f matrix4f) {
-        if (this.count > 16) {
+        if (this.count > UType.MAT4.count()) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, 16);
         } else {
             ((Buffer) this.floatValues).position(0);
@@ -139,6 +133,10 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void upload() {
+        if (!this.dirty) {
+            return;
+        }
+
         this.dirty = false;
         if (this.type.type() <= UType.IVEC4.type()) {
             this.uploadAsInteger();

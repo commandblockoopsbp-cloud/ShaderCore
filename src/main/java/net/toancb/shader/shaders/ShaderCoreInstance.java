@@ -303,16 +303,6 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
         for(int l = intlist.size() - 1; l >= 0; --l) {
             this.samplerNames.remove(intlist.getInt(l));
         }
-
-        for(ShaderCoreUniform shaderuniform : this.uniforms.values()) {
-            String s1 = shaderuniform.getName();
-            int k = ShaderUniform.glGetUniformLocation(this.programId, s1);
-            if (k == -1) {
-                LOGGER.warn("Could not find uniform named {} in the specified shader program.", (Object)s1);
-            } else {
-                shaderuniform.setLocation(k);
-            }
-        }
     }
 
     private void parseSamplerNode(JsonElement jsonElement) {
