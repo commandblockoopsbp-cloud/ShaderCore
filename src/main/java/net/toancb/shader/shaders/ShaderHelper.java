@@ -18,6 +18,8 @@ public final class ShaderHelper {
     private static final Minecraft mc = Minecraft.getInstance();
     private static boolean wasF9Pressed = false;
 
+    private ShaderHelper() {}
+
     public static Vector3f convertWorldToTexel(MatrixStack matrixStack, Vector3f pos3D, ActiveRenderInfo cam, float partialTick) {
         Matrix4f projMatrix = mc.gameRenderer.getProjectionMatrix(cam, partialTick, true);
         Matrix4f modelViewMatrix = matrixStack.last().pose();
