@@ -43,7 +43,7 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
     private final Map<String, IntSupplier> samplerMap = Maps.newHashMap();
     private final List<String> samplerNames = Lists.newArrayList();
     private final List<Integer> samplerLocations = Lists.newArrayList();
-    private final Map<String, ShaderCoreUniform> uniforms = Maps.newHashMap();
+    private final Map<String, ShaderCoreDefault> uniforms = Maps.newHashMap();
     private final int programId;
     private final String name;
     private boolean dirty;
@@ -209,9 +209,12 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
     }
 
     public void close() {
-        for(ShaderCoreUniform shaderCoreUniform : this.uniforms.values()) {
-            shaderCoreUniform.close();
+        for(ShaderCoreDefault uniform : this.uniforms.values()) {
+            if (uniform instanceof ShaderCoreUniform) {
+                ((ShaderCoreUniform) uniform).close();
+            }
         }
+        this.uniforms.clear();
 
         ShaderLinkHelper.releaseProgram(this);
     }
@@ -256,30 +259,33 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
             }
         }
 
-        for(ShaderCoreUniform shaderCoreUniform : this.uniforms.values()) {
-            shaderCoreUniform.upload();
+        for(ShaderCoreDefault uniform : this.uniforms.values()) {
+            if (uniform instanceof ShaderCoreUniform) {
+                ((ShaderCoreUniform) uniform).upload();
+            }
         }
     }
 
-    public ShaderCoreUniform getOrCreateUniform(String name, UType type, int count) {
+    public ShaderCoreDefault getOrCreateUniform(String name, UType type, int count) {
+        RenderSystem.assertThread(RenderSystem::isOnGameThread);
         if (this.uniforms.containsKey(name)) {
             return this.uniforms.get(name);
         }
 
         int location = ShaderCoreUniform.glGetUniformLocation(this.programId, name);
         if (location == -1) {
-            this.uniforms.put(name, ShaderCoreUniform.DUMMY);
-            return ShaderCoreUniform.DUMMY;
+            this.uniforms.put(name, ShaderCoreDefault.DUMMY_UNIFORM);
+            return ShaderCoreDefault.DUMMY_UNIFORM;
         }
 
         ShaderCoreUniform shaderCoreUniform = ShaderCoreUniform.create(name, type, count, this);
         shaderCoreUniform.setLocation(location);
         this.uniforms.put(name, shaderCoreUniform);
 
-        return shaderCoreUniform;
+        return (ShaderCoreDefault) shaderCoreUniform;
     }
 
-    public ShaderCoreUniform getOrCreateUniform(String name, UType type) {
+    public ShaderCoreDefault getOrCreateUniform(String name, UType type) {
         return this.getOrCreateUniform(name, type, 1);
     }
 

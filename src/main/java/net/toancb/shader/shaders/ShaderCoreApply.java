@@ -29,6 +29,8 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     private boolean hasError = false;
     private static long pastTime = System.currentTimeMillis();
 
+    protected ShaderCoreApply() {}
+
     protected static class AuxConfig {
         public final String name;
         public final boolean copyDepth;

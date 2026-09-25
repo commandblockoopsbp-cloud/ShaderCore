@@ -16,7 +16,7 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 
 @OnlyIn(Dist.CLIENT)
-public class ShaderCoreUniform implements AutoCloseable {
+public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
     private int location;
     private final int count;
@@ -26,8 +26,6 @@ public class ShaderCoreUniform implements AutoCloseable {
     private final String name;
     private boolean dirty;
     private final IShaderManager parent;
-
-    public static final ShaderCoreUniform DUMMY = new ShaderCoreUniform("dummy", UType.FLOAT, 1, null);
 
     private ShaderCoreUniform(String name, UType type, int count, IShaderManager shaderManager) {
         this.name = name;
@@ -90,8 +88,6 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeFloat(float... value) {
-        if (this == DUMMY) return;
-
         if (this.floatValues == null) {
             LOGGER.warn("Attempted to set float values on non-float uniform '{}' (type: {}). Skipping.", this.name, this.type);
             return;
@@ -108,8 +104,6 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeInt(int... value) {
-        if (this == DUMMY) return;
-
         if (this.intValues == null) {
             LOGGER.warn("Attempted to set int values on non-int uniform '{}' (type: {}). Skipping.", this.name, this.type);
             return;
@@ -127,7 +121,6 @@ public class ShaderCoreUniform implements AutoCloseable {
     }
 
     public void writeMat(Matrix4f matrix4f) {
-        if (this == DUMMY) return;
         if (this.count > UType.MAT4.count()) {
             LOGGER.warn("Uniform.set called with a too-small value array (expected {}, got {}). Ignoring.", this.count, UType.MAT4.count());
             return;

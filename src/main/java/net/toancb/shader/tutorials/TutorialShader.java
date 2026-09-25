@@ -10,8 +10,6 @@ import net.toancb.shader.shaders.ShaderCoreApply;
 public class TutorialShader extends ShaderCoreApply {
     private static final TutorialShader INSTANCE = new TutorialShader();
 
-    private TutorialShader() {}
-
     public void init() {
         super.initApply(AuxConfig.of("tuto", true));
     }
