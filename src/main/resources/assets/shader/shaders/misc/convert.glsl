@@ -24,23 +24,23 @@ vec2 viewToScreen(vec3 viewPos) {
 }
 
 vec3 screenToFeet(vec3 screenPos) {
-    vec3 viewPos = screenToView(screenPos, InverseProjectionMatrix);
+    vec3 viewPos = screenToView(screenPos);
     return (InverseModelViewMatrix * vec4(viewPos, 1.0)).xyz;
 }
 
 vec2 feetToScreen(vec3 feetPos) {
     vec3 viewPos = (ModelViewMatrix * vec4(feetPos, 1.0)).xyz;
-    return viewToScreen(viewPos, ProjectionMatrix);
+    return viewToScreen(viewPos);
 }
 
 vec3 screenToWorld(vec3 screenPos) {
-    vec3 feetPos = screenToFeet(screenPos, InverseProjectionMatrix, InverseModelViewMatrix);
+    vec3 feetPos = screenToFeet(screenPos);
     return feetPos + CameraPos;
 }
 
 vec2 worldToScreen(vec3 worldPos) {
     vec3 feetPos = worldPos - CameraPos;
-    return feetToScreen(feetPos, ProjectionMatrix, ModelViewMatrix);
+    return feetToScreen(feetPos);
 }
 
 #endif
