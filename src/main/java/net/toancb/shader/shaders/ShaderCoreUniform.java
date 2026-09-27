@@ -2,7 +2,6 @@ package net.toancb.shader.shaders;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.shader.IShaderManager;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -13,7 +12,6 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 
 @OnlyIn(Dist.CLIENT)
 public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseable {
@@ -25,9 +23,9 @@ public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseabl
     private final FloatBuffer floatValues;
     private final String name;
     private boolean dirty;
-    private final IShaderManager parent;
+    private final IShaderCoreManager parent;
 
-    private ShaderCoreUniform(String name, UType type, int count, IShaderManager shaderManager) {
+    private ShaderCoreUniform(String name, UType type, int count, IShaderCoreManager shaderManager) {
         this.name = name;
         this.count = count * type.count();
         this.type = type;
@@ -44,7 +42,7 @@ public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseabl
         this.markDirty();
     }
 
-    public static ShaderCoreUniform create(String name, UType type, int count, IShaderManager shaderManager) {
+    public static ShaderCoreUniform create(String name, UType type, int count, IShaderCoreManager shaderManager) {
         return new ShaderCoreUniform(name, type, count, shaderManager);
     }
 

@@ -14,7 +14,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.shader.*;
 import net.minecraft.client.util.JSONBlendingMode;
 import net.minecraft.client.util.JSONException;
 import net.minecraft.resources.IResource;
@@ -36,7 +35,7 @@ import java.util.Map;
 import java.util.function.IntSupplier;
 
 @OnlyIn(Dist.CLIENT)
-public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
+public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
     private static ShaderCoreInstance lastAppliedEffect;
     private static int lastProgramId = -1;
@@ -50,8 +49,8 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
     private final JSONBlendingMode blend;
     private final List<Integer> attributes;
     private final List<String> attributeNames;
-    private final ShaderLoader vertexProgram;
-    private final ShaderLoader fragmentProgram;
+    private final ShaderCoreLoader vertexProgram;
+    private final ShaderCoreLoader fragmentProgram;
 
     public ShaderCoreInstance(IResourceManager resourceManager, String shaderPath) throws IOException {
         ResourceLocation rl = ResourceLocation.tryParse(shaderPath);
@@ -104,10 +103,10 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
             }
 
             this.blend = parseBlendNode(JSONUtils.getAsJsonObject(jsonobject, "blend", null));
-            this.vertexProgram = getOrCreate(resourceManager, ShaderLoader.ShaderType.VERTEX, s);
-            this.fragmentProgram = getOrCreate(resourceManager, ShaderLoader.ShaderType.FRAGMENT, s2);
-            this.programId = ShaderLinkHelper.createProgram();
-            ShaderLinkHelper.linkProgram(this);
+            this.vertexProgram = getOrCreate(resourceManager, ShaderCoreLoader.ShaderCoreType.VERTEX, s);
+            this.fragmentProgram = getOrCreate(resourceManager, ShaderCoreLoader.ShaderCoreType.FRAGMENT, s2);
+            this.programId = ShaderCoreLinkHelper.createProgram();
+            ShaderCoreLinkHelper.linkProgram(this);
             this.updateLocations();
             if (this.attributeNames != null) {
                 for(String s3 : this.attributeNames) {
@@ -133,15 +132,15 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
         this.markDirty();
     }
 
-    public static ShaderLoader getOrCreate(IResourceManager resourceManager, ShaderLoader.ShaderType shaderType, String shaderName) throws IOException {
-        ShaderLoader shaderloader = shaderType.getPrograms().get(shaderName);
+    public static ShaderCoreLoader getOrCreate(IResourceManager resourceManager, ShaderCoreLoader.ShaderCoreType shaderType, String shaderName) throws IOException {
+        ShaderCoreLoader shaderloader = shaderType.getPrograms().get(shaderName);
         if (shaderloader == null) {
             ResourceLocation rl = ResourceLocation.tryParse(shaderName);
             ResourceLocation resourcelocation = new ResourceLocation(rl.getNamespace(), "shaders/program/" + rl.getPath() + shaderType.getExtension());
             IResource iresource = resourceManager.getResource(resourcelocation);
 
             try {
-                shaderloader = ShaderLoader.compileShader(shaderType, shaderName, iresource.getInputStream(), iresource.getSourceName());
+                shaderloader = ShaderCoreLoader.compileShader(shaderType, shaderName, iresource.getInputStream(), iresource.getSourceName());
             } finally {
                 IOUtils.closeQuietly(iresource);
             }
@@ -216,12 +215,12 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
         }
         this.uniforms.clear();
 
-        ShaderLinkHelper.releaseProgram(this);
+        ShaderCoreLinkHelper.releaseProgram(this);
     }
 
     public void clear() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        ShaderLinkHelper.glUseProgram(0);
+        ShaderCoreLinkHelper.glUseProgram(0);
         lastProgramId = -1;
         lastAppliedEffect = null;
 
@@ -241,7 +240,7 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
         lastAppliedEffect = this;
         this.blend.apply();
         if (this.programId != lastProgramId) {
-            ShaderLinkHelper.glUseProgram(this.programId);
+            ShaderCoreLinkHelper.glUseProgram(this.programId);
             lastProgramId = this.programId;
         }
 
@@ -299,7 +298,7 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
 
         for(int i = 0; i < this.samplerNames.size(); ++i) {
             String s = this.samplerNames.get(i);
-            int j = ShaderUniform.glGetUniformLocation(this.programId, s);
+            int j = ShaderCoreUniform.glGetUniformLocation(this.programId, s);
             if (j == -1) {
                 LOGGER.warn("Shader {} could not find sampler named {} in the specified shader program.", this.name, s);
                 this.samplerMap.remove(s);
@@ -346,12 +345,12 @@ public class ShaderCoreInstance implements IShaderManager, AutoCloseable {
     }
 
     @MethodsReturnNonnullByDefault
-    public ShaderLoader getVertexProgram() {
+    public ShaderCoreLoader getVertexProgram() {
         return this.vertexProgram;
     }
 
     @MethodsReturnNonnullByDefault
-    public ShaderLoader getFragmentProgram() {
+    public ShaderCoreLoader getFragmentProgram() {
         return this.fragmentProgram;
     }
 

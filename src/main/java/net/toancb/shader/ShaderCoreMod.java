@@ -24,7 +24,7 @@ public class ShaderCoreMod
 {
     public static final String MODID = "shader";
     // Directly reference a log4j logger.
-    private static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
 
     public ShaderCoreMod() {
         // Register the setup method for modloading

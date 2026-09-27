@@ -1,5 +1,7 @@
 #version 110
 
+#include "shader:shaders/misc/convert.glsl"
+
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DiffuseDepthSampler;
 
