@@ -7,6 +7,14 @@
 // Computer graphics, maths, shaders, fractals, demoscene
 // Source: https://iquilezles.org/articles/distfunctions/
 // ============================================================================
+float smax(float x, float y, float s) {
+    return ((x + y + sqrt((x - y)*(x - y) + s)) / 2.0);
+}
+
+float smin(float x, float y, float s) {
+    return ((x + y - sqrt((x - y)*(x - y) + s)) / 2.0);
+}
+
 float sdSphere(vec3 p, float r) {
     return length(p) - r;
 }
