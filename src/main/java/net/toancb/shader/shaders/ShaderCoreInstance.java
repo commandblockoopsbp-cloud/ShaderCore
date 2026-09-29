@@ -10,10 +10,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.SimpleTexture;
-import net.minecraft.client.renderer.texture.Texture;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.util.JSONBlendingMode;
 import net.minecraft.client.util.JSONException;
 import net.minecraft.resources.IResource;
@@ -318,22 +314,10 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
         String s = JSONUtils.getAsString(jsonobject, "name");
         this.samplerNames.add(s);
         if (!JSONUtils.isStringValue(jsonobject, "file")) {
-            this.samplerMap.put(s, null);
+            this.samplerMap.put(s, (IntSupplier)null);
+            this.samplerNames.add(s);
         } else {
-            String filePath = JSONUtils.getAsString(jsonobject, "file");
-            ResourceLocation location = new ResourceLocation(filePath);
-
-            this.samplerMap.put(s, (IntSupplier) () -> {
-                TextureManager tm = Minecraft.getInstance().getTextureManager();
-                Texture tex = tm.getTexture(location);
-
-                if (tex == null) {
-                    tex = new SimpleTexture(location);
-                    tm.register(location, tex);
-                }
-
-                return tex.getId();
-            });
+            this.samplerNames.add(s);
         }
     }
 
