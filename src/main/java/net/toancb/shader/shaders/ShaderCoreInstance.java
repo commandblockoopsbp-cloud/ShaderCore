@@ -315,9 +315,6 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
         this.samplerNames.add(s);
         if (!JSONUtils.isStringValue(jsonobject, "file")) {
             this.samplerMap.put(s, (IntSupplier)null);
-            this.samplerNames.add(s);
-        } else {
-            this.samplerNames.add(s);
         }
     }
 
