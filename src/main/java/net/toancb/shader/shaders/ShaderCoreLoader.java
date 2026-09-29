@@ -69,7 +69,7 @@ public class ShaderCoreLoader {
         }
     }
 
-    public static String processShaderIncludes(String shaderSource) throws IOException {
+    private static String processShaderIncludes(String shaderSource) throws IOException {
         int startIndex = shaderSource.indexOf("#include");
         while (startIndex != -1) {
             int midIndex = shaderSource.indexOf("\"", startIndex + 1);

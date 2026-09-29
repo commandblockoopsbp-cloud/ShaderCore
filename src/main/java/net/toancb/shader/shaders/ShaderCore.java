@@ -40,17 +40,17 @@ public class ShaderCore implements AutoCloseable {
     }
 
     public void addAuxAsset(String assetName, IntSupplier textureIdSupplier, int width, int height) {
-        this.auxNames.add(this.auxNames.size(), assetName);
-        this.auxAssets.add(this.auxAssets.size(), textureIdSupplier);
-        this.auxWidths.add(this.auxWidths.size(), width);
-        this.auxHeights.add(this.auxHeights.size(), height);
+        this.auxNames.add(assetName);
+        this.auxAssets.add(textureIdSupplier);
+        this.auxWidths.add(width);
+        this.auxHeights.add(height);
     }
 
     public void setOrthoMatrix(Matrix4f orthoMatrix) {
         this.shaderOrthoMatrix = orthoMatrix;
     }
 
-    public void addOrRunUniform(Consumer<ShaderCoreInstance> uniform) {
+    public void addUniform(Consumer<ShaderCoreInstance> uniform) {
         int outWidth = this.outTarget.width;
         int outHeight = this.outTarget.height;
 
@@ -76,7 +76,7 @@ public class ShaderCore implements AutoCloseable {
         int outHeight = this.outTarget.height;
         RenderSystem.viewport(0, 0, outWidth, outHeight);
 
-        this.addOrRunUniform(uniform);
+        this.addUniform(uniform);
 
         this.effect.apply();
 

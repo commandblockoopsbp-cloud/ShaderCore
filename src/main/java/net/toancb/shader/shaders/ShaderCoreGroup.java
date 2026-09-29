@@ -147,7 +147,7 @@ public class ShaderCoreGroup implements AutoCloseable {
                         String cleanTargetId;
                         if (targetId.endsWith(":depth")) {
                             isDepthBuffer = true;
-                            cleanTargetId = targetId.substring(0, targetId.lastIndexOf(58)); // 58 là mã ASCII của dấu ':'
+                            cleanTargetId = targetId.substring(0, targetId.lastIndexOf(58));
                         } else {
                             isDepthBuffer = false;
                             cleanTargetId = targetId;

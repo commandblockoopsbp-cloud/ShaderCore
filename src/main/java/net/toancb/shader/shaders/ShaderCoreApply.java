@@ -121,7 +121,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      */
     public void endShader(Consumer<ShaderCoreInstance> uniform) {
         if (!this.isActive()) return;
-        Consumer<ShaderCoreInstance> consumer = shader -> {
+        Consumer<ShaderCoreInstance> consumer = (shader) -> {
             onApplyCustomUniform(shader);
             if (uniform != null) uniform.accept(shader);
         };
