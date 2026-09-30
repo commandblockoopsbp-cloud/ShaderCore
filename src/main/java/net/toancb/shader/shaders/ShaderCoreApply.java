@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.LongStream;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class ShaderCoreApply implements AutoCloseable {
@@ -27,7 +28,10 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     private final Map<String, AuxTarget> framebuffers = new HashMap<>();
     private boolean active = true;
     private boolean hasError = false;
-    private static long pastTime = System.currentTimeMillis();
+    private static final long[] pastTime = LongStream.generate(System::currentTimeMillis).limit(2).toArray();
+    private boolean pendingResize = false;
+    private int lastCheckedWidth = -1;
+    private int lastCheckedHeight = -1;
 
     protected ShaderCoreApply() {}
 
@@ -75,8 +79,8 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      */
     protected final void initApply(AuxConfig... framebufferName) {
         if (this.shaderGroup != null) return;
-        if (System.currentTimeMillis() - pastTime > 1000) {
-            pastTime = System.currentTimeMillis();
+        if (System.currentTimeMillis() - pastTime[0] > 1000) {
+            pastTime[0] = System.currentTimeMillis();
             this.hasError = false;
         }
         if (!hasError) {
@@ -152,22 +156,36 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     }
 
     /**
+     * Resizes the entire shader group and its associated framebuffers
+     * according to the new window dimensions.
+     *
+     * @param width  The new width of the window in pixels.
+     * @param height The new height of the window in pixels.
+     */
+    public void resize(int width, int height) {
+        this.shaderGroup.resize(width, height);
+    }
+
+    /**
      * Automatically scales and adjusts the dimensions of all auxiliary Framebuffers
      * whenever the player resizes the game window, switches to fullscreen (F11), or modifies GUI scaling.
      * This prevents stretching, distortion, or pixel artifacting.
      */
-    public void resize() {
+    public void autoResize() {
         if (!this.isActive() || framebuffers.isEmpty()) return;
-
-        AuxTarget firstPair = framebuffers.values().iterator().next();
-        Framebuffer sampleFbo = firstPair.framebuffer;
-
-        if (sampleFbo != null) {
-            int width = mc.getWindow().getWidth();
-            int height = mc.getWindow().getHeight();
-            if (width != sampleFbo.width || height != sampleFbo.height) {
-                this.shaderGroup.resize(width, height);
-            }
+        int currentWindowWidth = mc.getWindow().getWidth();
+        int currentWindowHeight = mc.getWindow().getHeight();
+        if (currentWindowWidth != lastCheckedWidth || currentWindowHeight != lastCheckedHeight) {
+            lastCheckedWidth = currentWindowWidth;
+            lastCheckedHeight = currentWindowHeight;
+            pastTime[1]  = System.currentTimeMillis();
+            pendingResize = true;
+            return;
+        }
+        if (pendingResize && System.currentTimeMillis() - pastTime[1] > 200) {
+            pastTime[1]  = System.currentTimeMillis();
+            pendingResize = false;
+            this.resize(currentWindowWidth, currentWindowHeight);
         }
     }
 

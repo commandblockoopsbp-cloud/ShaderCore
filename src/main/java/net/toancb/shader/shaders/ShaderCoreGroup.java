@@ -37,10 +37,21 @@ public class ShaderCoreGroup implements AutoCloseable {
     private final String name;
     private final List<ShaderCore> passes = Lists.newArrayList();
     private final Map<String, Framebuffer> customRenderTargets = Maps.newHashMap();
-    private final List<Framebuffer> fullSizedTargets = Lists.newArrayList();
+    private final List<TargetScaleData> resizedTargets = Lists.newArrayList();
     private Matrix4f shaderOrthoMatrix;
     private int screenWidth;
     private int screenHeight;
+
+    static final class TargetScaleData {
+        public final Framebuffer framebuffer;
+        public final float scaleWidth, scaleHeight;
+
+        private TargetScaleData(Framebuffer framebuffer, float scaleWidth, float scaleHeight) {
+            this.framebuffer = framebuffer;
+            this.scaleWidth = scaleWidth;
+            this.scaleHeight = scaleHeight;
+        }
+    }
 
     public ShaderCoreGroup(TextureManager textureManager, IResourceManager resourceManager, Framebuffer screenTarget, ResourceLocation shaderLocation) throws IOException, JsonSyntaxException {
         this.resourceManager = resourceManager;
@@ -102,18 +113,19 @@ public class ShaderCoreGroup implements AutoCloseable {
 
     private void parseTargetNode(JsonElement targetElement) throws JSONException {
         if (JSONUtils.isStringValue(targetElement)) {
-            this.addTempTarget(targetElement.getAsString(), this.screenWidth, this.screenHeight);
+            this.addTempTarget(targetElement.getAsString(), 1.0f, 1.0f, true);
         } else {
             JsonObject targetObj = JSONUtils.convertToJsonObject(targetElement, "target");
             String targetName = JSONUtils.getAsString(targetObj, "name");
-            int width = JSONUtils.getAsInt(targetObj, "width", this.screenWidth);
-            int height = JSONUtils.getAsInt(targetObj, "height", this.screenHeight);
+            float scaleWidth = JSONUtils.getAsFloat(targetObj, "scale_width", 1.0f);
+            float scaleHeight = JSONUtils.getAsFloat(targetObj, "scale_height", 1.0f);
+            boolean isResize = JSONUtils.getAsBoolean(targetObj, "is_resize", true);
 
             if (this.customRenderTargets.containsKey(targetName)) {
                 throw new JSONException(targetName + " is already defined");
             }
 
-            this.addTempTarget(targetName, width, height);
+            this.addTempTarget(targetName, scaleWidth, scaleHeight, isResize);
         }
     }
 
@@ -206,8 +218,9 @@ public class ShaderCoreGroup implements AutoCloseable {
         return this.customRenderTargets.get(targetName);
     }
 
-    public void addTempTarget(String targetName, int width, int height) {
-        Framebuffer framebuffer = new Framebuffer(width, height, true, Minecraft.ON_OSX);
+    public void addTempTarget(String targetName, float widthScale, float heightScale, boolean isResize) {
+        Framebuffer framebuffer =
+                new Framebuffer((int) (this.screenWidth * widthScale), (int) (this.screenHeight * heightScale), true, Minecraft.ON_OSX);
         framebuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
 
         if (screenTarget.isStencilEnabled()) {
@@ -215,8 +228,8 @@ public class ShaderCoreGroup implements AutoCloseable {
         }
 
         this.customRenderTargets.put(targetName, framebuffer);
-        if (width == this.screenWidth && height == this.screenHeight) {
-            this.fullSizedTargets.add(framebuffer);
+        if (isResize) {
+            this.resizedTargets.add(new TargetScaleData(framebuffer, widthScale, heightScale));
         }
     }
 
@@ -228,7 +241,7 @@ public class ShaderCoreGroup implements AutoCloseable {
         }
 
         this.customRenderTargets.clear();
-        this.fullSizedTargets.clear();
+        this.resizedTargets.clear();
 
         for (ShaderCore shader : this.passes) {
             shader.close();
@@ -256,8 +269,8 @@ public class ShaderCoreGroup implements AutoCloseable {
             shader.setOrthoMatrix(this.shaderOrthoMatrix);
         }
 
-        for (Framebuffer framebuffer : this.fullSizedTargets) {
-            framebuffer.resize(width, height, Minecraft.ON_OSX);
+        for (TargetScaleData scaleData : this.resizedTargets) {
+            scaleData.framebuffer.resize((int) (width * scaleData.scaleWidth), (int) (height * scaleData.scaleHeight), Minecraft.ON_OSX);
         }
     }
 
