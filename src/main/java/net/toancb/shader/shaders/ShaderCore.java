@@ -12,6 +12,8 @@ import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.opengl.GL11;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
@@ -75,6 +77,9 @@ public class ShaderCore implements AutoCloseable {
         int outWidth = this.outTarget.width;
         int outHeight = this.outTarget.height;
         RenderSystem.viewport(0, 0, outWidth, outHeight);
+        RenderSystem.disableAlphaTest();
+        RenderSystem.alphaFunc(GL11.GL_ALWAYS, 0.0F);
+        RenderSystem.colorMask(true, true, true, true);
 
         this.addUniform(uniform);
 
@@ -82,7 +87,7 @@ public class ShaderCore implements AutoCloseable {
 
         this.outTarget.clear(Minecraft.ON_OSX);
         this.outTarget.bindWrite(false);
-        RenderSystem.depthFunc(519);
+        RenderSystem.depthFunc(GL11.GL_ALWAYS);
 
         BufferBuilder bufferbuilder = Tessellator.getInstance().getBuilder();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
@@ -93,7 +98,7 @@ public class ShaderCore implements AutoCloseable {
         bufferbuilder.end();
 
         WorldVertexBufferUploader.end(bufferbuilder);
-        RenderSystem.depthFunc(515);
+        RenderSystem.depthFunc(GL11.GL_LEQUAL);
         this.effect.clear();
         this.outTarget.unbindWrite();
         this.inTarget.unbindRead();
@@ -103,6 +108,8 @@ public class ShaderCore implements AutoCloseable {
                 ((Framebuffer) object).unbindRead();
             }
         }
+        RenderSystem.defaultAlphaFunc();
+        RenderSystem.enableAlphaTest();
     }
 
     public ShaderCoreInstance getEffect() {
