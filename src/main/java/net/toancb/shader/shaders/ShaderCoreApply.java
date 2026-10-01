@@ -126,7 +126,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
      */
     public void endShader(Consumer<ShaderCoreInstance> uniform) {
-        RenderSystem.assertThread(RenderSystem::isOnGameThread);
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive()) return;
         Consumer<ShaderCoreInstance> consumer = (shader) -> {
             onApplyCustomUniform(shader);
