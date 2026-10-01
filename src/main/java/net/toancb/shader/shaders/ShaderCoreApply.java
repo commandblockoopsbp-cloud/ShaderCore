@@ -1,6 +1,7 @@
 package net.toancb.shader.shaders;
 
 import com.google.gson.JsonSyntaxException;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.resources.IReloadableResourceManager;
@@ -106,6 +107,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * from the main screen if requested, prepping them to capture new graphics.
      */
     public void applyShader() {
+        RenderSystem.assertThread(RenderSystem::isOnGameThread);
         if (!this.isActive() || this.framebuffers.isEmpty()) return;
         for (AuxTarget framebuffer : framebuffers.values()) {
             framebuffer.framebuffer.clear(Minecraft.ON_OSX);
@@ -124,6 +126,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
      */
     public void endShader(Consumer<ShaderCoreInstance> uniform) {
+        RenderSystem.assertThread(RenderSystem::isOnGameThread);
         if (!this.isActive()) return;
         Consumer<ShaderCoreInstance> consumer = (shader) -> {
             onApplyCustomUniform(shader);
