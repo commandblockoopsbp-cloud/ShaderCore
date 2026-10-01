@@ -234,14 +234,9 @@ public class ShaderCoreGroup implements AutoCloseable {
     }
 
     public void close() {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-
         for (Framebuffer framebuffer : this.customRenderTargets.values()) {
             framebuffer.destroyBuffers();
         }
-
-        this.customRenderTargets.clear();
-        this.resizedTargets.clear();
 
         for (ShaderCore shader : this.passes) {
             shader.close();
