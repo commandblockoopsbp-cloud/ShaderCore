@@ -18,9 +18,9 @@ vec3 screenToView(vec3 screenPos) {
     return projectAndDivide(InverseProjectionMatrix, ndcPos);
 }
 
-vec2 viewToScreen(vec3 viewPos) {
+vec3 viewToScreen(vec3 viewPos) {
     vec3 ndcPos = projectAndDivide(ProjectionMatrix, viewPos);
-    return ndcPos.xy * 0.5 + 0.5;
+    return ndcPos * 0.5 + 0.5;
 }
 
 vec3 screenToFeet(vec3 screenPos) {
@@ -28,7 +28,7 @@ vec3 screenToFeet(vec3 screenPos) {
     return (InverseModelViewMatrix * vec4(viewPos, 1.0)).xyz;
 }
 
-vec2 feetToScreen(vec3 feetPos) {
+vec3 feetToScreen(vec3 feetPos) {
     vec3 viewPos = (ModelViewMatrix * vec4(feetPos, 1.0)).xyz;
     return viewToScreen(viewPos);
 }
@@ -38,7 +38,7 @@ vec3 screenToWorld(vec3 screenPos) {
     return feetPos + CameraPos;
 }
 
-vec2 worldToScreen(vec3 worldPos) {
+vec3 worldToScreen(vec3 worldPos) {
     vec3 feetPos = worldPos - CameraPos;
     return feetToScreen(feetPos);
 }
