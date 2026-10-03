@@ -10,6 +10,8 @@ import net.minecraft.resources.IResourceManagerReloadListener;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.toancb.shader.shaders.target.AuxConfig;
+import net.toancb.shader.shaders.target.AuxTarget;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,30 +37,6 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     private int lastCheckedHeight = -1;
 
     protected ShaderCoreApply() {}
-
-    protected static class AuxConfig {
-        public final String name;
-        public final boolean copyDepth;
-
-        public AuxConfig(String name, boolean copyDepth) {
-            this.name = name;
-            this.copyDepth = copyDepth;
-        }
-
-        public static AuxConfig of(String name, boolean copyDepth) {
-            return new AuxConfig(name, copyDepth);
-        }
-    }
-
-    private static class AuxTarget {
-        public final Framebuffer framebuffer;
-        public final boolean copyDepth;
-
-        public AuxTarget(Framebuffer framebuffer, boolean copyDepth) {
-            this.framebuffer = framebuffer;
-            this.copyDepth = copyDepth;
-        }
-    }
 
     /**
      * Initialization hook that subclasses must implement.
@@ -90,7 +68,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
                 shaderGroup.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
                 this.framebuffers.clear();
                 for (AuxConfig buffer : framebufferName) {
-                    framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth));
+                    framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth, buffer.preserveHistory));
                 }
             } catch (IOException | JsonSyntaxException e) {
                 LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
@@ -110,7 +88,10 @@ public abstract class ShaderCoreApply implements AutoCloseable {
         RenderSystem.assertThread(RenderSystem::isOnGameThread);
         if (!this.isActive() || this.framebuffers.isEmpty()) return;
         for (AuxTarget framebuffer : framebuffers.values()) {
-            framebuffer.framebuffer.clear(Minecraft.ON_OSX);
+            if (!framebuffer.preserveHistory) {
+                framebuffer.framebuffer.clear(Minecraft.ON_OSX);
+            }
+
             if (framebuffer.copyDepth) {
                 framebuffer.framebuffer.copyDepthFrom(mainTarget);
             }

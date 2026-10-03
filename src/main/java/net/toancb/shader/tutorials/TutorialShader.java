@@ -5,6 +5,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.toancb.shader.ShaderCoreMod;
 import net.toancb.shader.shaders.ShaderCoreApply;
+import net.toancb.shader.shaders.target.AuxConfig;
 
 @OnlyIn(Dist.CLIENT)
 public class TutorialShader extends ShaderCoreApply {
