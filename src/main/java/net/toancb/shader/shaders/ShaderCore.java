@@ -57,6 +57,7 @@ public class ShaderCore implements AutoCloseable {
         int outHeight = this.outTarget.height;
 
         this.effect.setSampler("DiffuseSampler", this.inTarget::getColorTextureId);
+        this.effect.setSampler("DiffuseDepthSampler", this.inTarget::getDepthTextureId);
 
         for (int i = 0; i < this.auxAssets.size(); ++i) {
             this.effect.setSampler(this.auxNames.get(i), this.auxAssets.get(i));
