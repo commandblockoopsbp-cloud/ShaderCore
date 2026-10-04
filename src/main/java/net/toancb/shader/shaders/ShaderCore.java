@@ -82,6 +82,7 @@ public class ShaderCore implements AutoCloseable {
 
         this.effect.apply();
 
+        RenderSystem.depthMask(true);
         this.outTarget.clear(Minecraft.ON_OSX);
         this.outTarget.bindWrite(false);
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
@@ -93,10 +94,10 @@ public class ShaderCore implements AutoCloseable {
         bufferbuilder.vertex(outWidth, outHeight, 500.0D).color(255, 255, 255, 255).endVertex();
         bufferbuilder.vertex(0.0D, outHeight, 500.0D).color(255, 255, 255, 255).endVertex();
         bufferbuilder.end();
-
         WorldVertexBufferUploader.end(bufferbuilder);
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
         RenderSystem.defaultAlphaFunc();
+        RenderSystem.depthMask(false);
         this.effect.clear();
         this.outTarget.unbindWrite();
         this.inTarget.unbindRead();
