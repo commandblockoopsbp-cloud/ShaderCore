@@ -85,7 +85,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * from the main screen if requested, prepping them to capture new graphics.
      */
     public void applyShader() {
-        RenderSystem.assertThread(RenderSystem::isOnGameThread);
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive() || this.framebuffers.isEmpty()) return;
         for (AuxTarget framebuffer : framebuffers.values()) {
             if (!framebuffer.preserveHistory) {
