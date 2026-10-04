@@ -10,6 +10,7 @@
         "Position"
     ],
     "samplers": [
-        { "name": "DiffuseSampler" }
+        { "name": "DiffuseSampler" },
+        { "name": "DiffuseDepthSampler" }
     ]
 }
