@@ -117,15 +117,25 @@ public class ShaderCoreGroup implements AutoCloseable {
         } else {
             JsonObject targetObj = JSONUtils.convertToJsonObject(targetElement, "target");
             String targetName = JSONUtils.getAsString(targetObj, "name");
-            float scaleWidth = JSONUtils.getAsFloat(targetObj, "scale_width", 1.0f);
-            float scaleHeight = JSONUtils.getAsFloat(targetObj, "scale_height", 1.0f);
-            boolean isResize = JSONUtils.getAsBoolean(targetObj, "is_resize", true);
-
             if (this.customRenderTargets.containsKey(targetName)) {
                 throw new JSONException(targetName + " is already defined");
             }
-
-            this.addTempTarget(targetName, scaleWidth, scaleHeight, isResize);
+            boolean hasGroup1 = targetObj.has("width") || targetObj.has("height");
+            boolean hasGroup2 = targetObj.has("scale_width") || targetObj.has("scale_height") || targetObj.has("is_resize");
+            if (hasGroup1 && hasGroup2) {
+                throw new IllegalArgumentException("Configuration error: Cannot simultaneously use the (width, height) group and the (scale_width, scale_height, is_resize) group in the same target!");
+            } else if (hasGroup1) {
+                int width = JSONUtils.getAsInt(targetObj, "width", this.screenWidth);
+                int height = JSONUtils.getAsInt(targetObj, "height", this.screenHeight);
+                this.addTempTarget(targetName, width, height);
+            } else if (hasGroup2) {
+                float scaleWidth = JSONUtils.getAsFloat(targetObj, "scale_width", 1.0f);
+                float scaleHeight = JSONUtils.getAsFloat(targetObj, "scale_height", 1.0f);
+                boolean resize = JSONUtils.getAsBoolean(targetObj, "is_resize", true);
+                this.addTempTarget(targetName, scaleWidth, scaleHeight, resize);
+            } else {
+                throw new IllegalArgumentException("Configuration error: Target must specify either the (width, height) group or the (scale_width, scale_height, is_resize) group!");
+            }
         }
     }
 
@@ -218,9 +228,8 @@ public class ShaderCoreGroup implements AutoCloseable {
         return this.customRenderTargets.get(targetName);
     }
 
-    public void addTempTarget(String targetName, float widthScale, float heightScale, boolean isResize) {
-        Framebuffer framebuffer =
-                new Framebuffer((int) (this.screenWidth * widthScale), (int) (this.screenHeight * heightScale), true, Minecraft.ON_OSX);
+    public void addTempTarget(String targetName, int width, int height) {
+        Framebuffer framebuffer = new Framebuffer(width, height, true, Minecraft.ON_OSX);
         framebuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
 
         if (screenTarget.isStencilEnabled()) {
@@ -228,8 +237,12 @@ public class ShaderCoreGroup implements AutoCloseable {
         }
 
         this.customRenderTargets.put(targetName, framebuffer);
+    }
+
+    public void addTempTarget(String targetName, float widthScale, float heightScale, boolean isResize) {
+        this.addTempTarget(targetName, (int) (this.screenWidth * widthScale), (int) (this.screenHeight * heightScale));
         if (isResize) {
-            this.resizedTargets.add(new TargetScaleData(framebuffer, widthScale, heightScale));
+            this.resizedTargets.add(new TargetScaleData(this.getTempTarget(targetName), widthScale, heightScale));
         }
     }
 
