@@ -11,6 +11,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
@@ -59,13 +60,15 @@ public final class ShaderHelper {
         };
     }
 
-    public static void fastReloadShaders(ShaderCoreApply shader) {
-        if (shader == null) return;
+    public static void fastReloadShaders(ShaderCoreApply... shaders) {
+        if (!Arrays.stream(shaders).findAny().isPresent()) return;
 
         boolean isF9Down = InputMappings.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_F9);
 
         if (isF9Down && !wasF9Pressed) {
-            shader.close();
+            for (ShaderCoreApply shader : shaders) {
+                shader.close();
+            }
         }
 
         wasF9Pressed = isF9Down;
