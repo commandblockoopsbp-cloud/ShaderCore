@@ -166,6 +166,7 @@ public class ShaderCoreGroup implements AutoCloseable {
                         JsonObject auxObj = JSONUtils.convertToJsonObject(auxElement, "auxtarget");
                         String samplerName = JSONUtils.getAsString(auxObj, "name");
                         String targetId = JSONUtils.getAsString(auxObj, "id");
+                        boolean isBilinear = JSONUtils.getAsBoolean(auxObj, "bilinear", false);
 
                         boolean isDepthBuffer;
                         String cleanTargetId;
@@ -177,7 +178,6 @@ public class ShaderCoreGroup implements AutoCloseable {
                             cleanTargetId = targetId;
                         }
 
-                        boolean isBilinear = JSONUtils.getAsBoolean(auxObj, "bilinear", false); // Thêm giá trị mặc định false cho an toàn
                         Framebuffer auxTarget = this.getRenderTarget(cleanTargetId);
 
                         if (auxTarget == null) {
