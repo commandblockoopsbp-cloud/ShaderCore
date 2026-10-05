@@ -26,7 +26,6 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     private ShaderCoreGroup shaderGroup;
     private final Map<String, AuxTarget> framebuffers = new HashMap<>();
     private boolean active = true;
-    private boolean hasError = false;
     private static final long[] pastTime = LongStream.generate(System::currentTimeMillis).limit(2).toArray();
     private boolean pendingResize = false;
     private int lastCheckedWidth = -1;
@@ -48,6 +47,14 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     protected abstract ResourceLocation getShaderLocation();
 
     /**
+     * Initialization hook called immediately after the shader group and its auxiliary
+     * framebuffers have been successfully initialized and mapped.
+     * Subclasses can override this method to perform custom post-initialization logic
+     * (such as binding specific uniforms or setting up resources).
+     */
+    protected void onInitApply() {}
+
+    /**
      * Initializes the shader system and automatically maps the auxiliary Framebuffers defined in the JSON.
      *
      * @param framebufferName Variable arguments of pairs containing [Auxiliary FBO Name, Copy Depth Flag]
@@ -56,23 +63,20 @@ public abstract class ShaderCoreApply implements AutoCloseable {
         if (this.shaderGroup != null) return;
         if (System.currentTimeMillis() - pastTime[0] > 1000) {
             pastTime[0] = System.currentTimeMillis();
-            this.hasError = false;
-        }
-        if (!hasError) {
-            try {
-                shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
-                shaderGroup.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
-                this.framebuffers.clear();
-                for (AuxConfig buffer : framebufferName) {
-                    framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth, buffer.preserveHistory));
-                }
-            } catch (IOException | JsonSyntaxException e) {
-                LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
-                shaderGroup = null;
-                this.framebuffers.clear();
-                this.hasError = true;
+        } else return;
+        try {
+            shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
+            shaderGroup.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+            this.framebuffers.clear();
+            for (AuxConfig buffer : framebufferName) {
+                framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth, buffer.preserveHistory));
             }
+        } catch (IOException | JsonSyntaxException e) {
+            LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
+            shaderGroup = null;
+            this.framebuffers.clear();
         }
+        this.onInitApply();
     }
 
     /**
@@ -80,7 +84,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * This method clears old frame data from auxiliary buffers and copies depth data (distance values)
      * from the main screen if requested, prepping them to capture new graphics.
      */
-    public void applyShader() {
+    public final void applyShader() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive() || this.framebuffers.isEmpty()) return;
         for (AuxTarget framebuffer : framebuffers.values()) {
@@ -102,7 +106,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      *
      * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
      */
-    public void endShader(Consumer<GraphicsCoreInstance> uniform) {
+    public final void endShader(Consumer<GraphicsCoreInstance> uniform) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive()) return;
         Consumer<GraphicsCoreInstance> consumer = (shader) -> {
@@ -127,7 +131,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      *
      * @param bufferName The target identifier string of the auxiliary Framebuffer.
      */
-    public void writeFramebuffer(String bufferName) {
+    public final void writeFramebuffer(String bufferName) {
         AuxTarget first = framebuffers.get(bufferName);
         if (first == null) return;
         Framebuffer framebuffer = first.framebuffer;
@@ -151,7 +155,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * whenever the player resizes the game window, switches to fullscreen (F11), or modifies GUI scaling.
      * This prevents stretching, distortion, or pixel artifacting.
      */
-    public void autoResize() {
+    public final void autoResize() {
         if (!this.isActive() || framebuffers.isEmpty()) return;
         int currentWindowWidth = mc.getWindow().getWidth();
         int currentWindowHeight = mc.getWindow().getHeight();
@@ -169,6 +173,13 @@ public abstract class ShaderCoreApply implements AutoCloseable {
         }
     }
 
+    /**
+     * Retrieves the auxiliary Framebuffer associated with the specified buffer name
+     * from the underlying shader group.
+     *
+     * @param bufferName The unique identifier/name of the target framebuffer.
+     * @return The corresponding {@link Framebuffer} instance, or null if the target does not exist.
+     */
     public Framebuffer getFramebuffer(String bufferName) {
         return this.shaderGroup.getTempTarget(bufferName);
     }
