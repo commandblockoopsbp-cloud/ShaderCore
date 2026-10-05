@@ -31,9 +31,9 @@ import java.util.Map;
 import java.util.function.IntSupplier;
 
 @OnlyIn(Dist.CLIENT)
-public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
+public class GraphicsCoreInstance implements IShaderCoreManager, AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
-    private static ShaderCoreInstance lastAppliedEffect;
+    private static GraphicsCoreInstance lastAppliedEffect;
     private static int lastProgramId = -1;
     private final Map<String, IntSupplier> samplerMap = Maps.newHashMap();
     private final List<String> samplerNames = Lists.newArrayList();
@@ -43,12 +43,10 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
     private final String name;
     private boolean dirty;
     private final JSONBlendingMode blend;
-    private final List<Integer> attributes;
-    private final List<String> attributeNames;
     private final ShaderCoreLoader vertexProgram;
     private final ShaderCoreLoader fragmentProgram;
 
-    public ShaderCoreInstance(IResourceManager resourceManager, String shaderPath) throws IOException {
+    public GraphicsCoreInstance(IResourceManager resourceManager, String shaderPath) throws IOException {
         ResourceLocation rl = ResourceLocation.tryParse(shaderPath);
         ResourceLocation resourcelocation = new ResourceLocation(rl.getNamespace(), "shaders/program/" + rl.getPath() + ".json");
         this.name = shaderPath;
@@ -77,14 +75,16 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
             }
 
             JsonArray jsonarray1 = JSONUtils.getAsJsonArray(jsonobject, "attributes", null);
+            List<Integer> attributes;
+            List<String> attributeNames;
             if (jsonarray1 != null) {
                 int j = 0;
-                this.attributes = Lists.newArrayListWithCapacity(jsonarray1.size());
-                this.attributeNames = Lists.newArrayListWithCapacity(jsonarray1.size());
+                attributes = Lists.newArrayListWithCapacity(jsonarray1.size());
+                attributeNames = Lists.newArrayListWithCapacity(jsonarray1.size());
 
                 for(JsonElement jsonelement1 : jsonarray1) {
                     try {
-                        this.attributeNames.add(JSONUtils.convertToString(jsonelement1, "attribute"));
+                        attributeNames.add(JSONUtils.convertToString(jsonelement1, "attribute"));
                     } catch (Exception exception1) {
                         JSONException jsonexception2 = JSONException.forException(exception1);
                         jsonexception2.prependJsonKey("attributes[" + j + "]");
@@ -94,8 +94,8 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
                     ++j;
                 }
             } else {
-                this.attributes = null;
-                this.attributeNames = null;
+                attributes = null;
+                attributeNames = null;
             }
 
             this.blend = parseBlendNode(JSONUtils.getAsJsonObject(jsonobject, "blend", null));
@@ -104,10 +104,10 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
             this.programId = ShaderCoreLinkHelper.createProgram();
             ShaderCoreLinkHelper.linkProgram(this);
             this.updateLocations();
-            if (this.attributeNames != null) {
-                for(String s3 : this.attributeNames) {
+            if (attributeNames != null) {
+                for (String s3 : attributeNames) {
                     int l = ShaderCoreUniform.glGetAttribLocation(this.programId, s3);
-                    this.attributes.add(l);
+                    attributes.add(l);
                 }
             }
         } catch (Exception exception3) {
@@ -240,7 +240,7 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
             lastProgramId = this.programId;
         }
 
-        for(int i = 0; i < this.samplerLocations.size(); ++i) {
+        for (int i = 0; i < this.samplerLocations.size(); ++i) {
             String s = this.samplerNames.get(i);
             IntSupplier intsupplier = this.samplerMap.get(s);
             if (intsupplier != null) {
@@ -254,14 +254,14 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
             }
         }
 
-        for(ShaderCoreDefault uniform : this.uniforms.values()) {
+        for (ShaderCoreDefault uniform : this.uniforms.values()) {
             if (uniform instanceof ShaderCoreUniform) {
                 ((ShaderCoreUniform) uniform).upload();
             }
         }
     }
 
-    public ShaderCoreDefault getOrCreateUniform(String name, UType type, int count) {
+    public ShaderCoreDefault setUniform(String name, UType type, int count) {
         RenderSystem.assertThread(RenderSystem::isOnGameThread);
         if (this.uniforms.containsKey(name)) {
             return this.uniforms.get(name);
@@ -280,8 +280,8 @@ public class ShaderCoreInstance implements IShaderCoreManager, AutoCloseable {
         return (ShaderCoreDefault) shaderCoreUniform;
     }
 
-    public ShaderCoreDefault getOrCreateUniform(String name, UType type) {
-        return this.getOrCreateUniform(name, type, 1);
+    public ShaderCoreDefault setUniform(String name, UType type) {
+        return this.setUniform(name, type, 1);
     }
 
     public void markDirty() {

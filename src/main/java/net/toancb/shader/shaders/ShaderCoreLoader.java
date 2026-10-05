@@ -10,6 +10,9 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL43;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +61,7 @@ public class ShaderCoreLoader {
             GlStateManager.glShaderSource(i, processShaderIncludes(s));
             GlStateManager.glCompileShader(i);
 
-            if (GlStateManager.glGetShaderi(i, 35713) == 0) {
+            if (GlStateManager.glGetShaderi(i, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 String s1 = StringUtils.trim(GlStateManager.glGetShaderInfoLog(i, 32768));
                 throw new IOException("Couldn't compile " + shaderType.getName() + " program (" + domain + ", " + shaderName + ") : " + s1);
             } else {
@@ -96,8 +99,8 @@ public class ShaderCoreLoader {
 
     @OnlyIn(Dist.CLIENT)
     public enum ShaderCoreType {
-        VERTEX("vertex", ".vsh", 35633),
-        FRAGMENT("fragment", ".fsh", 35632);
+        VERTEX("vertex", ".vsh", GL43.GL_VERTEX_SHADER),
+        FRAGMENT("fragment", ".fsh", GL43.GL_FRAGMENT_SHADER);
 
         private final String name;
         private final String extension;

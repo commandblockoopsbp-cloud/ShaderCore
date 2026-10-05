@@ -4,9 +4,6 @@ import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.resources.IReloadableResourceManager;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.resources.IResourceManagerReloadListener;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -15,7 +12,6 @@ import net.toancb.shader.shaders.target.AuxTarget;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -106,10 +102,10 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      *
      * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
      */
-    public void endShader(Consumer<ShaderCoreInstance> uniform) {
+    public void endShader(Consumer<GraphicsCoreInstance> uniform) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive()) return;
-        Consumer<ShaderCoreInstance> consumer = (shader) -> {
+        Consumer<GraphicsCoreInstance> consumer = (shader) -> {
             onApplyCustomUniform(shader);
             if (uniform != null) uniform.accept(shader);
         };
@@ -123,7 +119,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      *
      * @param shader the current shader core instance
      */
-    protected void onApplyCustomUniform(ShaderCoreInstance shader) {}
+    protected void onApplyCustomUniform(GraphicsCoreInstance shader) {}
 
     /**
      * Redirects the render engine output. Any graphics drawn immediately after this call
@@ -171,6 +167,10 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             pendingResize = false;
             this.resize(currentWindowWidth, currentWindowHeight);
         }
+    }
+
+    public Framebuffer getFramebuffer(String bufferName) {
+        return this.shaderGroup.getTempTarget(bufferName);
     }
 
     /**

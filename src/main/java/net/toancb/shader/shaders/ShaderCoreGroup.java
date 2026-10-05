@@ -42,7 +42,7 @@ public class ShaderCoreGroup implements AutoCloseable {
     private int screenWidth;
     private int screenHeight;
 
-    static final class TargetScaleData {
+    private static final class TargetScaleData {
         public final Framebuffer framebuffer;
         public final float scaleWidth, scaleHeight;
 
@@ -269,7 +269,7 @@ public class ShaderCoreGroup implements AutoCloseable {
         }
     }
 
-    public void process(Consumer<ShaderCoreInstance> uniform) {
+    public void process(Consumer<GraphicsCoreInstance> uniform) {
         for (ShaderCore shader : this.passes) {
             shader.process(uniform);
         }

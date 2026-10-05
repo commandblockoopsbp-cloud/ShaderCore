@@ -40,7 +40,7 @@ public final class ShaderHelper {
         return texelPos;
     }
 
-    public static Consumer<ShaderCoreInstance> addDefaultUniform(Matrix4f model, Matrix4f projection) {
+    public static Consumer<GraphicsCoreInstance> addDefaultUniform(Matrix4f model, Matrix4f projection) {
         ActiveRenderInfo cam = mc.gameRenderer.getMainCamera();
 
         Matrix4f inverseModelMatrix = model.copy();
@@ -51,11 +51,11 @@ public final class ShaderHelper {
         Vector3f camPos = new Vector3f(cam.getPosition());
 
         return shader -> {
-            shader.getOrCreateUniform("ModelViewMatrix", UType.MAT4).writeMat(model);
-            shader.getOrCreateUniform("InverseModelViewMatrix", UType.MAT4).writeMat(inverseModelMatrix);
-            shader.getOrCreateUniform("ProjectionMatrix", UType.MAT4).writeMat(projection);
-            shader.getOrCreateUniform("InverseProjectionMatrix", UType.MAT4).writeMat(inverseProjectionMatrix);
-            shader.getOrCreateUniform("CameraPos", UType.VEC3).writeFloat(camPos.x(), camPos.y(), camPos.z());
+            shader.setUniform("ModelViewMatrix", UType.MAT4).writeMat(model);
+            shader.setUniform("InverseModelViewMatrix", UType.MAT4).writeMat(inverseModelMatrix);
+            shader.setUniform("ProjectionMatrix", UType.MAT4).writeMat(projection);
+            shader.setUniform("InverseProjectionMatrix", UType.MAT4).writeMat(inverseProjectionMatrix);
+            shader.setUniform("CameraPos", UType.VEC3).writeFloat(camPos.x(), camPos.y(), camPos.z());
         };
     }
 

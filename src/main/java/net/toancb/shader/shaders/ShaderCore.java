@@ -21,7 +21,7 @@ import java.util.function.IntSupplier;
 
 @OnlyIn(Dist.CLIENT)
 public class ShaderCore implements AutoCloseable {
-    private final ShaderCoreInstance effect;
+    private final GraphicsCoreInstance effect;
     public final Framebuffer inTarget;
     public final Framebuffer outTarget;
     private final static Minecraft mc = Minecraft.getInstance();
@@ -32,7 +32,7 @@ public class ShaderCore implements AutoCloseable {
     private Matrix4f shaderOrthoMatrix;
 
     public ShaderCore(IResourceManager resourceManager, String shaderName, Framebuffer inputTarget, Framebuffer outputTarget) throws IOException {
-        this.effect = new ShaderCoreInstance(resourceManager, shaderName);
+        this.effect = new GraphicsCoreInstance(resourceManager, shaderName);
         this.inTarget = inputTarget;
         this.outTarget = outputTarget;
     }
@@ -52,7 +52,7 @@ public class ShaderCore implements AutoCloseable {
         this.shaderOrthoMatrix = orthoMatrix;
     }
 
-    public void addUniform(Consumer<ShaderCoreInstance> uniform) {
+    public void addUniform(Consumer<GraphicsCoreInstance> uniform) {
         int outWidth = this.outTarget.width;
         int outHeight = this.outTarget.height;
 
@@ -61,19 +61,19 @@ public class ShaderCore implements AutoCloseable {
 
         for (int i = 0; i < this.auxAssets.size(); ++i) {
             this.effect.setSampler(this.auxNames.get(i), this.auxAssets.get(i));
-            this.effect.getOrCreateUniform("AuxSize" + i, UType.VEC2).writeFloat(this.auxWidths.get(i), this.auxHeights.get(i));
+            this.effect.setUniform("AuxSize" + i, UType.VEC2).writeFloat(this.auxWidths.get(i), this.auxHeights.get(i));
         }
 
-        this.effect.getOrCreateUniform("ProjMat", UType.MAT4).writeMat(this.shaderOrthoMatrix);
-        this.effect.getOrCreateUniform("InSize", UType.VEC2).writeFloat(this.inTarget.width, this.inTarget.height);
-        this.effect.getOrCreateUniform("OutSize", UType.VEC2).writeFloat(outWidth, outHeight);
+        this.effect.setUniform("ProjMat", UType.MAT4).writeMat(this.shaderOrthoMatrix);
+        this.effect.setUniform("InSize", UType.VEC2).writeFloat(this.inTarget.width, this.inTarget.height);
+        this.effect.setUniform("OutSize", UType.VEC2).writeFloat(outWidth, outHeight);
 
         if (uniform != null) uniform.accept(this.effect);
 
-        this.effect.getOrCreateUniform("ScreenSize", UType.VEC2).writeFloat(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+        this.effect.setUniform("ScreenSize", UType.VEC2).writeFloat(mc.getWindow().getWidth(), mc.getWindow().getHeight());
     }
 
-    public void process(Consumer<ShaderCoreInstance> uniform) {
+    public void process(Consumer<GraphicsCoreInstance> uniform) {
         this.inTarget.unbindWrite();
         int outWidth = this.outTarget.width;
         int outHeight = this.outTarget.height;
@@ -107,7 +107,7 @@ public class ShaderCore implements AutoCloseable {
         }
     }
 
-    public ShaderCoreInstance getEffect() {
+    public GraphicsCoreInstance getEffect() {
         return this.effect;
     }
 }
