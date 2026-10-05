@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.Texture;
@@ -20,6 +21,7 @@ import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.io.IOUtils;
+import org.lwjgl.opengl.GL11;
 
 import java.io.Closeable;
 import java.io.FileNotFoundException;
@@ -175,7 +177,9 @@ public class ShaderCoreGroup implements AutoCloseable {
                             cleanTargetId = targetId;
                         }
 
+                        boolean isBilinear = JSONUtils.getAsBoolean(auxObj, "bilinear", false); // Thêm giá trị mặc định false cho an toàn
                         Framebuffer auxTarget = this.getRenderTarget(cleanTargetId);
+
                         if (auxTarget == null) {
                             if (isDepthBuffer) {
                                 throw new JSONException("Render target '" + cleanTargetId + "' can't be used as depth buffer");
@@ -194,24 +198,38 @@ public class ShaderCoreGroup implements AutoCloseable {
                             }
 
                             textureManager.bind(textureLocation);
+
+                            if (isBilinear) {
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                            } else {
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                            }
+
                             Texture texture = textureManager.getTexture(textureLocation);
                             int auxWidth = JSONUtils.getAsInt(auxObj, "width");
                             int auxHeight = JSONUtils.getAsInt(auxObj, "height");
-                            boolean isBilinear = JSONUtils.getAsBoolean(auxObj, "bilinear");
-
-                            if (isBilinear) {
-                                RenderSystem.texParameter(3553, 10241, 9729);
-                                RenderSystem.texParameter(3553, 10240, 9729);
-                            } else {
-                                RenderSystem.texParameter(3553, 10241, 9728);
-                                RenderSystem.texParameter(3553, 10240, 9728);
-                            }
 
                             shader.addAuxAsset(samplerName, texture::getId, auxWidth, auxHeight);
-                        } else if (isDepthBuffer) {
-                            shader.addAuxAsset(samplerName, auxTarget::getDepthTextureId, auxTarget.width, auxTarget.height);
                         } else {
-                            shader.addAuxAsset(samplerName, auxTarget::getColorTextureId, auxTarget.width, auxTarget.height);
+                            int textureId = isDepthBuffer ? auxTarget.getDepthTextureId() : auxTarget.getColorTextureId();
+
+                            RenderSystem.bindTexture(textureId);
+
+                            if (isBilinear) {
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                            } else {
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                            }
+
+                            if (isDepthBuffer) {
+                                shader.addAuxAsset(samplerName, auxTarget::getDepthTextureId, auxTarget.width, auxTarget.height);
+                            } else {
+                                shader.addAuxAsset(samplerName, auxTarget::getColorTextureId, auxTarget.width, auxTarget.height);
+                            }
                         }
                     } catch (Exception e) {
                         JSONException jsonException = JSONException.forException(e);

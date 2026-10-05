@@ -52,7 +52,7 @@ public class ShaderCore implements AutoCloseable {
         this.shaderOrthoMatrix = orthoMatrix;
     }
 
-    public void addUniform(Consumer<GraphicsCoreInstance> uniform) {
+    private void addUniform(Consumer<GraphicsCoreInstance> uniform) {
         int outWidth = this.outTarget.width;
         int outHeight = this.outTarget.height;
 
