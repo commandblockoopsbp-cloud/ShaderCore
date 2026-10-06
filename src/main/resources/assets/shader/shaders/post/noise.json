@@ -23,12 +23,22 @@
   ],
   "passes": [
     {
-      "name": "shader:noise/worley_noise",
+      "name": "shader:noise/worley_noise_3d",
       "intarget": "minecraft:main",
       "outtarget": "3d_worley_noise"
     },
     {
-      "name": "shader:noise/perlin_noise",
+      "name": "shader:noise/worley_noise_2d",
+      "intarget": "minecraft:main",
+      "outtarget": "2d_worley_noise"
+    },
+    {
+      "name": "shader:noise/perlin_noise_3d",
+      "intarget": "minecraft:main",
+      "outtarget": "3d_perlin_noise"
+    },
+    {
+      "name": "shader:noise/perlin_noise_2d",
       "intarget": "minecraft:main",
       "outtarget": "2d_perlin_noise"
     }
