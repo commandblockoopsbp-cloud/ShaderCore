@@ -1,0 +1,12 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "shader:blit_ndc",
+  "fragment": "shader:noise/worley_noise_2d",
+  "attributes": [
+    "Position"
+  ]
+}

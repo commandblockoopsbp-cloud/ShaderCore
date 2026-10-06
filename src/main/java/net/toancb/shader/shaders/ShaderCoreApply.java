@@ -212,5 +212,6 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             this.shaderGroup = null;
         }
         this.framebuffers.clear();
+        this.init();
     }
 }
