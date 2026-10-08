@@ -36,21 +36,6 @@ public class NoiseGenShader extends ShaderCoreApply {
         }
     }
 
-    protected void onInitApply() {
-        this.getFramebuffer("3d_worley_noise").resize((int) SIZE_3D.x, (int) SIZE_3D.y, Minecraft.ON_OSX);
-        this.getFramebuffer("2d_worley_noise").resize((int) SIZE_2D.x, (int) SIZE_2D.y, Minecraft.ON_OSX);
-        this.getFramebuffer("3d_perlin_noise").resize((int) SIZE_3D.x, (int) SIZE_3D.y, Minecraft.ON_OSX);
-        this.getFramebuffer("2d_perlin_noise").resize((int) SIZE_2D.x, (int) SIZE_2D.y, Minecraft.ON_OSX);
-
-        this.setupNoiseTextureFilter("3d_worley_noise");
-        this.setupNoiseTextureFilter("2d_worley_noise");
-        this.setupNoiseTextureFilter("3d_perlin_noise");
-        this.setupNoiseTextureFilter("2d_perlin_noise");
-
-        this.applyShader();
-        this.endShader(null);
-    }
-
     public void addNoiseSampler(GraphicsCoreInstance shader) {
         shader.setSampler("WorleyNoise3DTexture", this.getFramebuffer("3d_worley_noise")::getColorTextureId);
         shader.setSampler("WorleyNoise2DTexture", this.getFramebuffer("2d_worley_noise")::getColorTextureId);
@@ -78,6 +63,18 @@ public class NoiseGenShader extends ShaderCoreApply {
                 AuxConfig.history("3d_perlin_noise", true),
                 AuxConfig.history("2d_perlin_noise", true)
         );
+        this.getFramebuffer("3d_worley_noise").resize((int) SIZE_3D.x, (int) SIZE_3D.y, Minecraft.ON_OSX);
+        this.getFramebuffer("2d_worley_noise").resize((int) SIZE_2D.x, (int) SIZE_2D.y, Minecraft.ON_OSX);
+        this.getFramebuffer("3d_perlin_noise").resize((int) SIZE_3D.x, (int) SIZE_3D.y, Minecraft.ON_OSX);
+        this.getFramebuffer("2d_perlin_noise").resize((int) SIZE_2D.x, (int) SIZE_2D.y, Minecraft.ON_OSX);
+
+        this.setupNoiseTextureFilter("3d_worley_noise");
+        this.setupNoiseTextureFilter("2d_worley_noise");
+        this.setupNoiseTextureFilter("3d_perlin_noise");
+        this.setupNoiseTextureFilter("2d_perlin_noise");
+
+        this.applyShader();
+        this.endShader(null);
     }
 
     protected ResourceLocation getShaderLocation() {

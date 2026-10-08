@@ -1,10 +1,10 @@
 #ifndef NOISE_GEN_GLSL
 #define NOISE_GEN_GLSL
 
-uniform sampler2D WorleyNoise2DTexture;
 uniform sampler2D WorleyNoise3DTexture;
-uniform sampler2D PerlinNoise2DTexture;
+uniform sampler2D WorleyNoise2DTexture;
 uniform sampler2D PerlinNoise3DTexture;
+uniform sampler2D PerlinNoise2DTexture;
 
 uniform float BaseScale;
 uniform float Channel;

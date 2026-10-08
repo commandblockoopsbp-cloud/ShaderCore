@@ -19,27 +19,28 @@
       "name": "2d_perlin_noise",
       "width": 512,
       "height": 512
-    }
+    },
+    "swap"
   ],
   "passes": [
     {
       "name": "shader:noise/worley_noise_3d",
-      "intarget": "minecraft:main",
+      "intarget": "swap",
       "outtarget": "3d_worley_noise"
     },
     {
       "name": "shader:noise/worley_noise_2d",
-      "intarget": "minecraft:main",
+      "intarget": "swap",
       "outtarget": "2d_worley_noise"
     },
     {
       "name": "shader:noise/perlin_noise_3d",
-      "intarget": "minecraft:main",
+      "intarget": "swap",
       "outtarget": "3d_perlin_noise"
     },
     {
       "name": "shader:noise/perlin_noise_2d",
-      "intarget": "minecraft:main",
+      "intarget": "swap",
       "outtarget": "2d_perlin_noise"
     }
   ]

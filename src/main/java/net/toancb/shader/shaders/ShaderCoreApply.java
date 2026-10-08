@@ -47,14 +47,6 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     protected abstract ResourceLocation getShaderLocation();
 
     /**
-     * Initialization hook called immediately after the shader group and its auxiliary
-     * framebuffers have been successfully initialized and mapped.
-     * Subclasses can override this method to perform custom post-initialization logic
-     * (such as binding specific uniforms or setting up resources).
-     */
-    protected void onInitApply() {}
-
-    /**
      * Initializes the shader system and automatically maps the auxiliary Framebuffers defined in the JSON.
      *
      * @param framebufferName Variable arguments of pairs containing [Auxiliary FBO Name, Copy Depth Flag]
@@ -65,18 +57,17 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             pastTime[0] = System.currentTimeMillis();
         } else return;
         try {
-            shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
-            shaderGroup.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+            this.shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
+            this.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
             this.framebuffers.clear();
             for (AuxConfig buffer : framebufferName) {
                 framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth, buffer.preserveHistory));
             }
         } catch (IOException | JsonSyntaxException e) {
             LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
-            shaderGroup = null;
+            this.shaderGroup = null;
             this.framebuffers.clear();
         }
-        this.onInitApply();
     }
 
     /**
@@ -110,7 +101,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive()) return;
         Consumer<GraphicsCoreInstance> consumer = (shader) -> {
-            onApplyCustomUniform(shader);
+            this.onApplyCustomUniform(shader);
             if (uniform != null) uniform.accept(shader);
         };
         this.shaderGroup.process(consumer);
