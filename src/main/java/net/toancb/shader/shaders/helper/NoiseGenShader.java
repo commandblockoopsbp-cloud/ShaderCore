@@ -56,13 +56,7 @@ public class NoiseGenShader extends ShaderCoreApply {
         this.shareUniform(shader);
     }
 
-    public void init() {
-        super.initApply(
-                AuxConfig.history("3d_worley_noise", true),
-                AuxConfig.history("2d_worley_noise", true),
-                AuxConfig.history("3d_perlin_noise", true),
-                AuxConfig.history("2d_perlin_noise", true)
-        );
+    protected void onInitApply() {
         this.getFramebuffer("3d_worley_noise").resize((int) SIZE_3D.x, (int) SIZE_3D.y, Minecraft.ON_OSX);
         this.getFramebuffer("2d_worley_noise").resize((int) SIZE_2D.x, (int) SIZE_2D.y, Minecraft.ON_OSX);
         this.getFramebuffer("3d_perlin_noise").resize((int) SIZE_3D.x, (int) SIZE_3D.y, Minecraft.ON_OSX);
@@ -75,6 +69,15 @@ public class NoiseGenShader extends ShaderCoreApply {
 
         this.applyShader();
         this.endShader(null);
+    }
+
+    public void init() {
+        super.initApply(
+                AuxConfig.history("3d_worley_noise", true),
+                AuxConfig.history("2d_worley_noise", true),
+                AuxConfig.history("3d_perlin_noise", true),
+                AuxConfig.history("2d_perlin_noise", true)
+        );
     }
 
     protected ResourceLocation getShaderLocation() {

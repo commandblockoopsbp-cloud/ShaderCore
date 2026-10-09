@@ -47,6 +47,12 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     protected abstract ResourceLocation getShaderLocation();
 
     /**
+     * Called once during shader initialization to cache uniform handles
+     * and avoid costly string lookups during the per-frame render loop.
+     */
+    protected void onInitApply() {}
+
+    /**
      * Initializes the shader system and automatically maps the auxiliary Framebuffers defined in the JSON.
      *
      * @param framebufferName Variable arguments of pairs containing [Auxiliary FBO Name, Copy Depth Flag]
@@ -68,6 +74,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             this.shaderGroup = null;
             this.framebuffers.clear();
         }
+        this.onInitApply();
     }
 
     /**
