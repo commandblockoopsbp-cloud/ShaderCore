@@ -4,14 +4,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Vector2f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.toancb.shader.ShaderCoreMod;
 import net.toancb.shader.shaders.GraphicsCoreInstance;
 import net.toancb.shader.shaders.ShaderCoreApply;
 import net.toancb.shader.shaders.UType;
-import net.toancb.shader.shaders.target.AuxConfig;
+import net.toancb.shader.shaders.pipeline.AuxConfig;
 import org.lwjgl.opengl.GL11;
 
 @OnlyIn(Dist.CLIENT)

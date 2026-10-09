@@ -1,14 +1,15 @@
-package net.toancb.shader.shaders;
+package net.toancb.shader.shaders.pipeline;
 
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class ShaderCoreDefault {
-    public static final ShaderCoreDefault DUMMY_UNIFORM = new ShaderCoreDefault();
+public class UniformBase {
+    public static final UniformBase DUMMY_UNIFORM = new UniformBase();
 
-    protected ShaderCoreDefault() {}
+    protected UniformBase() {}
 
     public void writeFloat(float... value) {
     }
@@ -18,4 +19,6 @@ public class ShaderCoreDefault {
 
     public void writeMat(Matrix4f matrix4f) {
     }
+
+    public void upload() {}
 }

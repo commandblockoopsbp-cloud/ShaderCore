@@ -10,7 +10,7 @@
       "outtarget": "swap"
     },
     {
-      "name": "shader:blit_no_depth",
+      "name": "shader:blit",
       "intarget": "swap",
       "outtarget": "minecraft:main"
     }

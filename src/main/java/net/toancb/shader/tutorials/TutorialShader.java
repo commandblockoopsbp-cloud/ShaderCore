@@ -7,8 +7,7 @@ import net.toancb.shader.ShaderCoreMod;
 import net.toancb.shader.helper.NoiseGenShader;
 import net.toancb.shader.shaders.GraphicsCoreInstance;
 import net.toancb.shader.shaders.ShaderCoreApply;
-import net.toancb.shader.shaders.UType;
-import net.toancb.shader.shaders.target.AuxConfig;
+import net.toancb.shader.shaders.pipeline.AuxConfig;
 
 @OnlyIn(Dist.CLIENT)
 public class TutorialShader extends ShaderCoreApply {

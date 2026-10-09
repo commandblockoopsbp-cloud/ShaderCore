@@ -1,4 +1,4 @@
-package net.toancb.shader.shaders.target;
+package net.toancb.shader.shaders.pipeline;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.toancb.shader.shaders.pipeline.UniformBase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.system.MemoryUtil;
@@ -14,7 +15,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 @OnlyIn(Dist.CLIENT)
-public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseable {
+public class ShaderCoreUniform extends UniformBase implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
     private int location;
     private final int count;
@@ -25,7 +26,7 @@ public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseabl
     private boolean dirty;
     private final IShaderCoreManager parent;
 
-    private ShaderCoreUniform(String name, UType type, int count, IShaderCoreManager shaderManager) {
+    public ShaderCoreUniform(String name, UType type, int count, IShaderCoreManager shaderManager) {
         this.name = name;
         this.count = count * type.count();
         this.type = type;
@@ -42,16 +43,8 @@ public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseabl
         this.markDirty();
     }
 
-    public static ShaderCoreUniform create(String name, UType type, int count, IShaderCoreManager shaderManager) {
-        return new ShaderCoreUniform(name, type, count, shaderManager);
-    }
-
     public static int glGetUniformLocation(int programId, CharSequence name) {
         return GlStateManager._glGetUniformLocation(programId, name);
-    }
-
-    public static void uploadInteger(int location, int value) {
-        RenderSystem.glUniform1i(location, value);
     }
 
     public static int glGetAttribLocation(int programId, CharSequence attributeName) {
@@ -139,15 +132,11 @@ public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseabl
             this.uploadAsInteger();
         } else if (this.type.type() <= UType.VEC4.type()) {
             this.uploadAsFloat();
-        } else {
-            if (this.type.type() > UType.MAT4.type()) {
-                LOGGER.warn("Uniform.upload called, but type value ({}) is not a valid type. Ignoring.", this.type);
-                return;
-            }
-
+        } else if (this.type.type() <= UType.MAT4.type()) {
             this.uploadAsMatrix();
+        } else {
+            LOGGER.warn("Uniform.upload called, but type value ({}) is not a valid type. Ignoring.", this.type);
         }
-
     }
 
     private void uploadAsInteger() {
@@ -166,7 +155,7 @@ public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseabl
                 RenderSystem.glUniform4(this.location, this.intValues);
                 break;
             default:
-                LOGGER.warn("Uniform.upload called, but count value ({}) is  not in the range of 1 to 4. Ignoring.", this.count);
+                LOGGER.warn("Uniform.upload called, but count value ({}) is not in the range of 1 to 4. Ignoring.", this.count);
         }
 
     }
@@ -203,6 +192,9 @@ public class ShaderCoreUniform extends ShaderCoreDefault implements AutoCloseabl
                 break;
             case MAT4:
                 RenderSystem.glUniformMatrix4(this.location, false, this.floatValues);
+                break;
+            default:
+                LOGGER.warn("Uniform.upload called, but count value ({}) is not in the range of 2 to 4. Ignoring.", this.count);
         }
     }
 }
