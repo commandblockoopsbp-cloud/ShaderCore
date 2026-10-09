@@ -1,6 +1,7 @@
 package net.toancb.shader.shaders;
 
 import com.google.gson.JsonSyntaxException;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
@@ -10,6 +11,7 @@ import net.toancb.shader.shaders.target.AuxConfig;
 import net.toancb.shader.shaders.target.AuxTarget;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -47,16 +49,27 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     protected abstract ResourceLocation getShaderLocation();
 
     /**
-     * Executed right before the shader group and temporary framebuffers are built,
-     * allowing you to prepare any pre-requisite states or clean up existing resources.
+     * Determines whether the current shader instance requires specific OpenGL state configurations
+     * (such as disabling blend/depth/alpha tests and resetting matrices) during its processing cycle.
+     *
+     * @return true if custom OpenGL state adjustments are required, false otherwise.
      */
-    protected void onPreInitApply() {}
+    protected abstract boolean requiresCustomState();
 
     /**
-     * Executed immediately after the shader group finishes initialization and
-     * framebuffers are successfully mapped, used for post-setup configurations.
+     * Executed right before shader initialization begins.
      */
-    protected void onPostInitApply() {}
+    protected void onPreInit() {}
+
+    /**
+     * Executed immediately after the shader group is successfully built.
+     */
+    protected void onGroupBuilt() {}
+
+    /**
+     * Executed at the very end of the setup process.
+     */
+    protected void onPostInit() {}
 
     /**
      * Initializes the shader system and automatically maps the auxiliary Framebuffers defined in the JSON.
@@ -68,9 +81,10 @@ public abstract class ShaderCoreApply implements AutoCloseable {
         if (System.currentTimeMillis() - pastTime[0] > 1000) {
             pastTime[0] = System.currentTimeMillis();
         } else return;
+        this.onPreInit();
         try {
             this.shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
-            this.onPreInitApply();
+            this.onGroupBuilt();
             this.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
             this.framebuffers.clear();
             for (AuxConfig buffer : framebufferName) {
@@ -81,7 +95,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             this.shaderGroup = null;
             this.framebuffers.clear();
         }
-        this.onPostInitApply();
+        this.onPostInit();
     }
 
     /**
@@ -108,7 +122,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * Triggers the ShaderGroup to execute the post-processing pipeline using the captured FBO data,
      * applies any dynamic uniforms provided, and renders the final composited image directly back onto the player's screen.
      *
-     * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
+     * @param uniform Optional dynamic uniforms to apply to the shader passes during processing.
      */
     public final void endShader(@Nullable Consumer<GraphicsCoreInstance> uniform) {
         if (!this.isActive()) return;
@@ -116,7 +130,21 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             this.onApplyCustomUniform(shader);
             if (uniform != null) uniform.accept(shader);
         };
+        boolean useStates = this.requiresCustomState();
+        if (useStates) {
+            RenderSystem.disableBlend();
+            RenderSystem.disableDepthTest();
+            RenderSystem.disableAlphaTest();
+            RenderSystem.enableTexture();
+            RenderSystem.matrixMode(GL11.GL_TEXTURE);
+            RenderSystem.pushMatrix();
+            RenderSystem.loadIdentity();
+        }
         this.shaderGroup.process(consumer);
+        if (useStates) {
+            RenderSystem.popMatrix();
+            RenderSystem.enableTexture();
+        }
         mainTarget.bindWrite(true);
     }
 

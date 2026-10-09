@@ -25,6 +25,11 @@ public class TutorialShader extends ShaderCoreApply {
     }
 
     @Override
+    protected boolean requiresCustomState() {
+        return true;
+    }
+
+    @Override
     protected void onApplyCustomUniform(GraphicsCoreInstance shader) {
         NOISE_GEN.shareUniform(shader);
         NOISE_GEN.addNoiseSampler(shader);
