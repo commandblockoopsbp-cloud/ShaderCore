@@ -56,7 +56,7 @@ public class NoiseGenShader extends ShaderCoreApply {
         this.shareUniform(shader);
     }
 
-    protected void onInitApply() {
+    protected void onPreInitApply() {
         this.getFramebuffer("3d_worley_noise").resize(SIZE_3D.x(), SIZE_3D.y(), Minecraft.ON_OSX);
         this.getFramebuffer("2d_worley_noise").resize(SIZE_2D.x(), SIZE_2D.y(), Minecraft.ON_OSX);
         this.getFramebuffer("3d_perlin_noise").resize(SIZE_3D.x(), SIZE_3D.y(), Minecraft.ON_OSX);
@@ -66,7 +66,9 @@ public class NoiseGenShader extends ShaderCoreApply {
         this.setupNoiseTextureFilter("2d_worley_noise");
         this.setupNoiseTextureFilter("3d_perlin_noise");
         this.setupNoiseTextureFilter("2d_perlin_noise");
+    }
 
+    protected void onPostInitApply() {
         this.applyShader();
         this.endShader(null);
     }

@@ -12,6 +12,7 @@ import net.toancb.shader.shaders.target.AuxTarget;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,10 +48,16 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     protected abstract ResourceLocation getShaderLocation();
 
     /**
-     * Called once during shader initialization to cache uniform handles
-     * and avoid costly string lookups during the per-frame render loop.
+     * Executed right before the shader group and temporary framebuffers are built,
+     * allowing you to prepare any pre-requisite states or clean up existing resources.
      */
-    protected void onInitApply() {}
+    protected void onPreInitApply() {}
+
+    /**
+     * Executed immediately after the shader group finishes initialization and
+     * framebuffers are successfully mapped, used for post-setup configurations.
+     */
+    protected void onPostInitApply() {}
 
     /**
      * Initializes the shader system and automatically maps the auxiliary Framebuffers defined in the JSON.
@@ -64,6 +71,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
         } else return;
         try {
             this.shaderGroup = new ShaderCoreGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), this.getShaderLocation());
+            this.onPreInitApply();
             this.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
             this.framebuffers.clear();
             for (AuxConfig buffer : framebufferName) {
@@ -74,7 +82,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             this.shaderGroup = null;
             this.framebuffers.clear();
         }
-        this.onInitApply();
+        this.onPostInitApply();
     }
 
     /**
@@ -103,7 +111,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      *
      * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
      */
-    public final void endShader(Consumer<GraphicsCoreInstance> uniform) {
+    public final void endShader(@Nullable Consumer<GraphicsCoreInstance> uniform) {
         if (!this.isActive()) return;
         Consumer<GraphicsCoreInstance> consumer = (shader) -> {
             this.onApplyCustomUniform(shader);
