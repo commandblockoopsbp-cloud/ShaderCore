@@ -83,7 +83,6 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * from the main screen if requested, prepping them to capture new graphics.
      */
     public final void applyShader() {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive() || this.framebuffers.isEmpty()) return;
         for (AuxTarget framebuffer : framebuffers.values()) {
             if (!framebuffer.preserveHistory) {
@@ -105,7 +104,6 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * @param uniform    Optional dynamic uniforms to apply to the shader passes during processing.
      */
     public final void endShader(Consumer<GraphicsCoreInstance> uniform) {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (!this.isActive()) return;
         Consumer<GraphicsCoreInstance> consumer = (shader) -> {
             this.onApplyCustomUniform(shader);

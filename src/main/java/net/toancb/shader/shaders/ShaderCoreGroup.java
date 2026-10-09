@@ -250,7 +250,7 @@ public class ShaderCoreGroup implements AutoCloseable {
         Framebuffer framebuffer = new Framebuffer(width, height, true, Minecraft.ON_OSX);
         framebuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
 
-        if (screenTarget.isStencilEnabled()) {
+        if (this.screenTarget.isStencilEnabled()) {
             framebuffer.enableStencil();
         }
 
