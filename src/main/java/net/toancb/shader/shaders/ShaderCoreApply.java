@@ -1,7 +1,6 @@
 package net.toancb.shader.shaders;
 
 import com.google.gson.JsonSyntaxException;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
@@ -75,7 +74,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
             this.resize(mc.getWindow().getWidth(), mc.getWindow().getHeight());
             this.framebuffers.clear();
             for (AuxConfig buffer : framebufferName) {
-                framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth, buffer.preserveHistory));
+                this.framebuffers.put(buffer.name, new AuxTarget(shaderGroup.getTempTarget(buffer.name), buffer.copyDepth, buffer.preserveHistory));
             }
         } catch (IOException | JsonSyntaxException e) {
             LOGGER.warn("Failed to load shader: {}", this.getShaderLocation(), e);
@@ -92,13 +91,13 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      */
     public final void applyShader() {
         if (!this.isActive() || this.framebuffers.isEmpty()) return;
-        for (AuxTarget framebuffer : framebuffers.values()) {
-            if (!framebuffer.preserveHistory) {
-                framebuffer.framebuffer.clear(Minecraft.ON_OSX);
+        for (AuxTarget auxTarget : this.framebuffers.values()) {
+            if (!auxTarget.preserveHistory) {
+                auxTarget.framebuffer.clear(Minecraft.ON_OSX);
             }
 
-            if (framebuffer.copyDepth) {
-                framebuffer.framebuffer.copyDepthFrom(mainTarget);
+            if (auxTarget.copyDepth) {
+                auxTarget.framebuffer.copyDepthFrom(mainTarget);
             }
         }
         mainTarget.bindWrite(false);
@@ -136,7 +135,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * @param bufferName The target identifier string of the auxiliary Framebuffer.
      */
     public final void writeFramebuffer(String bufferName) {
-        AuxTarget first = framebuffers.get(bufferName);
+        AuxTarget first = this.framebuffers.get(bufferName);
         if (first == null) return;
         Framebuffer framebuffer = first.framebuffer;
         if (framebuffer == null) return;
@@ -160,7 +159,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
      * This prevents stretching, distortion, or pixel artifacting.
      */
     public final void autoResize() {
-        if (!this.isActive() || framebuffers.isEmpty()) return;
+        if (!this.isActive() || this.framebuffers.isEmpty()) return;
         int currentWindowWidth = mc.getWindow().getWidth();
         int currentWindowHeight = mc.getWindow().getHeight();
         if (currentWindowWidth != lastCheckedWidth || currentWindowHeight != lastCheckedHeight) {

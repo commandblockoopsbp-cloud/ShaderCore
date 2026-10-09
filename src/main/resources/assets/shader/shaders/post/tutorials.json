@@ -7,16 +7,10 @@
     {
       "name": "shader:tutorials",
       "intarget": "minecraft:main",
-      "outtarget": "swap",
-      "auxtargets": [
-        {
-          "name": "DiffuseDepthSampler",
-          "id": "minecraft:main:depth"
-        }
-      ]
+      "outtarget": "swap"
     },
     {
-      "name": "shader:blit",
+      "name": "shader:blit_no_depth",
       "intarget": "swap",
       "outtarget": "minecraft:main"
     }

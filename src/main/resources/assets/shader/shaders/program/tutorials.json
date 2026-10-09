@@ -4,13 +4,17 @@
     "srcrgb": "one",
     "dstrgb": "zero"
   },
-  "vertex": "sobel",
+  "vertex": "shader:sobel",
   "fragment": "shader:tutorials",
   "attributes": [
     "Position"
   ],
   "samplers": [
     { "name": "DiffuseSampler" },
-    { "name": "DiffuseDepthSampler" }
+    { "name": "DiffuseDepthSampler" },
+    { "name": "WorleyNoise3DTexture" },
+    { "name": "WorleyNoise2DTexture" },
+    { "name": "PerlinNoise3DTexture" },
+    { "name": "PerlinNoise2DTexture" }
   ]
 }

@@ -75,10 +75,10 @@ public class NoiseGenShader extends ShaderCoreApply {
 
     public void init() {
         super.initApply(
-                AuxConfig.history("3d_worley_noise", true),
-                AuxConfig.history("2d_worley_noise", true),
-                AuxConfig.history("3d_perlin_noise", true),
-                AuxConfig.history("2d_perlin_noise", true)
+                AuxConfig.nothing("3d_worley_noise"),
+                AuxConfig.nothing("2d_worley_noise"),
+                AuxConfig.nothing("3d_perlin_noise"),
+                AuxConfig.nothing("2d_perlin_noise")
         );
     }
 

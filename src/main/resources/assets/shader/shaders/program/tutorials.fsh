@@ -1,18 +1,16 @@
-#version 110
+#version 120
 
-#include "shader:shaders/misc/convert.glsl"
+#include "shader:shaders/misc/noise_with_sampler.glsl"
 
 uniform sampler2D DiffuseSampler;
-uniform sampler2D DiffuseDepthSampler;
 
 varying vec2 texCoord;
 varying vec2 oneTexel;
 
 void main() {
-    vec3 mainColor = texture2D(DiffuseSampler, texCoord).rgb;
-    float mainDepth = texture2D(DiffuseDepthSampler, texCoord).r;
+    vec3 mainColor = texture2D(PerlinNoise3DTexture, texCoord).rrr;
 
-    vec3 finalColor = vec3(mainDepth);
+    vec3 finalColor = vec3(mainColor);
 
     gl_FragColor = vec4(finalColor, 1.0);
 }
