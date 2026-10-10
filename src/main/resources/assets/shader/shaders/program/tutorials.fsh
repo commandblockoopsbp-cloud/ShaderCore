@@ -8,7 +8,7 @@ varying vec2 texCoord;
 varying vec2 oneTexel;
 
 void main() {
-    vec3 mainColor = texture2D(PerlinNoise3DTexture, texCoord).rrr;
+    vec3 mainColor = texture2D(WorleyNoise3DTexture, texCoord).rrr;
 
     vec3 finalColor = vec3(mainColor);
 

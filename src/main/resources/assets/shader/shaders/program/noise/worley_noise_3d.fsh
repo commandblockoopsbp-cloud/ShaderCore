@@ -22,7 +22,8 @@ void main() {
 
     vec4 result;
     for (int i = 0; i < 4; i++) {
-        vec3 pos = fract(vec3(gridPos.x, (depthPos + 1.0 + float(i)) / m, gridPos.y)) * BaseScale;
+        vec3 pos = vec3(gridPos.x, (depthPos + 1.0 + float(i)) / TexSize.z, gridPos.y);
+        pos = fract(pos) * BaseScale;
         result[i] = fastVoronoi3D(pos, BaseScale);
     }
 

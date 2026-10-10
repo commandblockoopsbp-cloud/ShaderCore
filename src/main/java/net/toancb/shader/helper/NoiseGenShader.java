@@ -39,7 +39,7 @@ public class NoiseGenShader extends ShaderCoreApply {
     public void shareUniform(GraphicsCoreInstance shader) {
         shader.setUniform("BaseScale", UType.FLOAT).writeFloat(this.baseScale);
         shader.setUniform("Channel", UType.FLOAT).writeFloat(CHANNEL);
-        int texZ = (TEX_SIZE.x() / SIZE_3D.x()) * (TEX_SIZE.y() / SIZE_3D.y()) * CHANNEL;
+        int texZ = (SIZE_3D.x() / TEX_SIZE.x()) * (SIZE_3D.y() / TEX_SIZE.y()) * CHANNEL;
         shader.setUniform("TexSize", UType.VEC3).writeFloat(TEX_SIZE.x(), TEX_SIZE.y(), texZ);
         shader.setUniform("Size3D", UType.VEC2).writeFloat(SIZE_3D.x(), SIZE_3D.y());
         shader.setUniform("Size2D", UType.VEC2).writeFloat(SIZE_2D.x(), SIZE_2D.y());
