@@ -19,6 +19,4 @@ public class UniformBase {
 
     public void writeMat(Matrix4f matrix4f) {
     }
-
-    public void upload() {}
 }

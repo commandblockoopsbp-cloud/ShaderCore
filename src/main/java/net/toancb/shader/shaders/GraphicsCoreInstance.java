@@ -2,6 +2,7 @@ package net.toancb.shader.shaders;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,6 +27,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.IntSupplier;
 
 @OnlyIn(Dist.CLIENT)
@@ -33,8 +35,10 @@ public class GraphicsCoreInstance implements IShaderCoreManager, AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
     private static GraphicsCoreInstance lastAppliedEffect;
     private static int lastProgramId = -1;
-    private final Map<String, SamplerBase> sampler = Maps.newHashMap();
-    private final Map<String, UniformBase> uniforms = Maps.newHashMap();
+    private final Map<String, SamplerBase> samplersName = Maps.newHashMap();
+    private final List<ShaderCoreSampler> samplerUse = Lists.newArrayList();
+    private final Map<String, UniformBase> uniformsName = Maps.newHashMap();
+    private final List<ShaderCoreUniform> uniformsUse = Lists.newArrayList();
     private final int programId;
     private final String name;
     private boolean dirty;
@@ -184,12 +188,10 @@ public class GraphicsCoreInstance implements IShaderCoreManager, AutoCloseable {
     }
 
     public void close() {
-        for (UniformBase uniform : this.uniforms.values()) {
-            if (uniform instanceof ShaderCoreUniform) {
-                ((ShaderCoreUniform) uniform).close();
-            }
-        }
-        this.uniforms.clear();
+        this.uniformsUse.forEach(ShaderCoreUniform::close);
+
+        this.uniformsName.clear();
+        this.uniformsUse.clear();
 
         ShaderCoreLinkHelper.releaseProgram(this);
     }
@@ -200,9 +202,7 @@ public class GraphicsCoreInstance implements IShaderCoreManager, AutoCloseable {
         lastProgramId = -1;
         lastAppliedEffect = null;
 
-        for (SamplerBase sampler : this.sampler.values()) {
-            sampler.close();
-        }
+        this.samplerUse.forEach(ShaderCoreSampler::close);
     }
 
     public void apply() {
@@ -215,30 +215,29 @@ public class GraphicsCoreInstance implements IShaderCoreManager, AutoCloseable {
             lastProgramId = this.programId;
         }
 
-        for (SamplerBase sampler : this.sampler.values()) {
-            sampler.upload();
-        }
+        this.samplerUse.forEach(ShaderCoreSampler::upload);
 
-        for (UniformBase uniform : this.uniforms.values()) {
+        for (ShaderCoreUniform uniform : this.uniformsUse) {
             uniform.upload();
         }
     }
 
     public UniformBase setUniform(String name, UType type, int count) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (this.uniforms.containsKey(name)) {
-            return this.uniforms.get(name);
+        if (this.uniformsName.containsKey(name)) {
+            return this.uniformsName.get(name);
         }
 
         int location = ShaderCoreUniform.glGetUniformLocation(this.programId, name);
         if (location == -1) {
-            this.uniforms.put(name, UniformBase.DUMMY_UNIFORM);
+            this.uniformsName.put(name, UniformBase.DUMMY_UNIFORM);
             return UniformBase.DUMMY_UNIFORM;
         }
 
         ShaderCoreUniform shaderCoreUniform = new ShaderCoreUniform(name, type, count, this);
         shaderCoreUniform.setLocation(location);
-        this.uniforms.put(name, shaderCoreUniform);
+        this.uniformsName.put(name, shaderCoreUniform);
+        this.uniformsUse.add(shaderCoreUniform);
 
         return (UniformBase) shaderCoreUniform;
     }
@@ -249,20 +248,21 @@ public class GraphicsCoreInstance implements IShaderCoreManager, AutoCloseable {
 
     public void setSampler(String name, IntSupplier textureIdSupplier) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (this.sampler.containsKey(name)) {
-            this.sampler.get(name).setTextureId(textureIdSupplier);
+        if (this.samplersName.containsKey(name)) {
+            this.samplersName.get(name).setTextureId(textureIdSupplier);
             return;
         }
 
         int location = ShaderCoreUniform.glGetUniformLocation(this.programId, name);
         if (location == -1) {
-            this.sampler.put(name, SamplerBase.DUMMY_SAMPLER);
+            this.samplersName.put(name, SamplerBase.DUMMY_SAMPLER);
             return;
         }
 
-        ShaderCoreSampler shaderCoreSampler = new ShaderCoreSampler(name, this.sampler.size(), textureIdSupplier, this);
+        ShaderCoreSampler shaderCoreSampler = new ShaderCoreSampler(name, this.samplerUse.size(), textureIdSupplier, this);
         shaderCoreSampler.setLocation(location);
-        this.sampler.put(name, shaderCoreSampler);
+        this.samplersName.put(name, shaderCoreSampler);
+        this.samplerUse.add(shaderCoreSampler);
     }
 
     public void markDirty() {

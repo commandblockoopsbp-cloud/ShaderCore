@@ -8,45 +8,29 @@ uniform sampler2D PerlinNoise2DTexture;
 
 uniform float BaseScale;
 uniform float Channel;
-uniform vec2 TexSize;
+uniform vec3 TexSize;
 uniform float ZSize;
 uniform vec2 Size3D;
 uniform vec2 Size2D;
 
-vec4 sampleTileHardware(sampler2D sampler, vec3 pos, vec2 tilePos) {
-    vec2 tilePixel = pos.xz * TexSize;
-    vec2 clampedPixel = clamp(tilePixel, vec2(0.5), TexSize - vec2(0.5));
-    vec2 uv = (clampedPixel + tilePos * TexSize) / Size3D;
-    return texture2D(sampler, uv);
-}
-
-vec4 simpleNoise3D(sampler2D sampler, vec3 p, float offsetY, out float y) {
+vec3 simple3D(sampler2D sampler, vec3 p) {
     vec3 pos = fract(p / BaseScale);
-    y = pos.y * ZSize / Channel + offsetY;
-    float tileIdx = floor(y);
 
-    vec2 gridTiles = Size3D / TexSize;
+    float texYPos = pos.y * TexSize.z;
+    float realYPos = texYPos / Channel;
 
-    vec2 tilePos = vec2(mod(tileIdx, gridTiles.x), floor(tileIdx / gridTiles.x));
+    float m = Size3D.x / TexSize.x;
+    vec2 gridPos = floor(vec2(mod(realYPos, m), realYPos / m));
 
-    return sampleTileHardware(sampler, pos, tilePos);
-}
+    vec2 texPos = (vec2(pos.x, pos.z) + gridPos) * TexSize.xy / Size3D;
+    vec4 color = texture2D(sampler, texPos);
 
-vec2 layerNoise3D(sampler2D sampler, vec3 p, out float f) {
-    float y1 = 0.0;
-    vec4 noiseTex1 = simpleNoise3D(sampler, p, 0.0, y1);
+    float fY = fract(texYPos);
+    float testCase = floor(fY * Channel);
 
-    float channelVal = y1 * Channel;
-    int testCase = int(mod(floor(channelVal), Channel));
-    f = fract(channelVal);
+    vec2 resXy = (testCase < 1.0) ? color.xy : ((testCase < 2.0) ? color.yz : color.zw);
 
-    if (testCase == 0) return noiseTex1.xy;
-    if (testCase == 1) return noiseTex1.yz;
-    if (testCase == 2) return noiseTex1.zw;
-
-    float y2 = 0.0;
-    vec4 noiseTex2 = simpleNoise3D(sampler, p, 1.0, y2);
-    return vec2(noiseTex1.w, noiseTex2.x);
+    return vec3(resXy, fY);
 }
 
 vec4 samplerPerlin2D(vec2 p) {
@@ -56,19 +40,17 @@ vec4 samplerPerlin2D(vec2 p) {
 
 vec4 samplerVoronoi2D(vec2 p) {
     vec2 uv = fract(p / BaseScale);
-    return texture2D(WorleyNoise2DTexture, uv);
+    return 1.0 - texture2D(WorleyNoise2DTexture, uv);
 }
 
 float samplerVoronoi3D(vec3 p) {
-    float f = 0.0;
-    vec2 noiseTex = layerNoise3D(WorleyNoise3DTexture, p, f);
-    return 1.0 - mix(noiseTex.x, noiseTex.y, f);
+    vec3 noiseTex = simple3D(WorleyNoise3DTexture, p);
+    return 1.0 - mix(noiseTex.x, noiseTex.y, noiseTex.z);
 }
 
 float samplerPerlin3D(vec3 p) {
-    float f = 0.0;
-    vec2 noiseTex = layerNoise3D(PerlinNoise3DTexture, p, f);
-    return mix(noiseTex.x, noiseTex.y, f);
+    vec3 noiseTex = simple3D(PerlinNoise3DTexture, p);
+    return mix(noiseTex.x, noiseTex.y, noiseTex.z);
 }
 
 #endif

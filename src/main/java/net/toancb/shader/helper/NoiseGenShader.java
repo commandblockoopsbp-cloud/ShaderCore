@@ -1,9 +1,9 @@
 package net.toancb.shader.helper;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.Vector3i;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.toancb.shader.ShaderCoreMod;
@@ -16,23 +16,17 @@ import org.lwjgl.opengl.GL11;
 @OnlyIn(Dist.CLIENT)
 public class NoiseGenShader extends ShaderCoreApply {
     private static final NoiseGenShader INSTANCE = new NoiseGenShader();
-    public static final Vector2i SIZE_3D = new Vector2i(512, 1024);
-    public static final Vector2i SIZE_2D = new Vector2i(512, 512);
+    private static final Vector2i TEX_SIZE = new Vector2i(128, 128);
+    private static final Vector2i SIZE_3D = new Vector2i(1024, 1024);
+    private static final Vector2i SIZE_2D = new Vector2i(512, 512);
+    private static final int CHANNEL = 3;
     private float baseScale = 16.0f;
 
     private NoiseGenShader() {}
 
     private void setupNoiseTextureFilter(String targetName) {
         Framebuffer fb = this.getFramebuffer(targetName);
-        if (fb != null) {
-            RenderSystem.bindTexture(fb.getColorTextureId());
-
-            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-
-            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-        }
+        fb.setFilterMode(GL11.GL_LINEAR);
     }
 
     public void addNoiseSampler(GraphicsCoreInstance shader) {
@@ -43,10 +37,10 @@ public class NoiseGenShader extends ShaderCoreApply {
     }
 
     public void shareUniform(GraphicsCoreInstance shader) {
-        shader.setUniform("BaseScale", UType.FLOAT).writeFloat(baseScale);
-        shader.setUniform("Channel", UType.FLOAT).writeFloat(4.0f);
-        shader.setUniform("TexSize", UType.VEC2).writeFloat(128.0f, 128.0f);
-        shader.setUniform("ZSize", UType.FLOAT).writeFloat(128.0f);
+        shader.setUniform("BaseScale", UType.FLOAT).writeFloat(this.baseScale);
+        shader.setUniform("Channel", UType.FLOAT).writeFloat(CHANNEL);
+        int texZ = (TEX_SIZE.x() / SIZE_3D.x()) * (TEX_SIZE.y() / SIZE_3D.y()) * CHANNEL;
+        shader.setUniform("TexSize", UType.VEC3).writeFloat(TEX_SIZE.x(), TEX_SIZE.y(), texZ);
         shader.setUniform("Size3D", UType.VEC2).writeFloat(SIZE_3D.x(), SIZE_3D.y());
         shader.setUniform("Size2D", UType.VEC2).writeFloat(SIZE_2D.x(), SIZE_2D.y());
     }

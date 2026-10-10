@@ -2,23 +2,27 @@
   "targets": [
     {
       "name": "3d_worley_noise",
-      "width": 512,
-      "height": 1024
+      "scale_width": 1.0,
+      "scale_height": 1.0,
+      "is_resize": false
     },
     {
       "name": "2d_worley_noise",
-      "width": 512,
-      "height": 512
+      "scale_width": 1.0,
+      "scale_height": 1.0,
+      "is_resize": false
     },
     {
       "name": "3d_perlin_noise",
-      "width": 512,
-      "height": 1024
+      "scale_width": 1.0,
+      "scale_height": 1.0,
+      "is_resize": false
     },
     {
       "name": "2d_perlin_noise",
-      "width": 512,
-      "height": 512
+      "scale_width": 1.0,
+      "scale_height": 1.0,
+      "is_resize": false
     },
     "swap"
   ],

@@ -9,9 +9,7 @@ import java.util.function.IntSupplier;
 public class SamplerBase {
     public static final SamplerBase DUMMY_SAMPLER = new SamplerBase();
 
-    public void close() {}
-
-    public void upload() {}
+    protected SamplerBase() {}
 
     public void setTextureId(IntSupplier textureIdSupplier) {}
 }

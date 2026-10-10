@@ -28,7 +28,7 @@ public abstract class ShaderCoreApply implements AutoCloseable {
     private ShaderCoreGroup shaderGroup;
     private final Map<String, AuxTarget> framebuffers = new HashMap<>();
     private boolean active = true;
-    private static final long[] pastTime = LongStream.generate(System::currentTimeMillis).limit(2).toArray();
+    private static final long[] pastTime = LongStream.generate(() -> System.currentTimeMillis() - 1000).limit(2).toArray();
     private boolean pendingResize = false;
     private int lastCheckedWidth = -1;
     private int lastCheckedHeight = -1;
