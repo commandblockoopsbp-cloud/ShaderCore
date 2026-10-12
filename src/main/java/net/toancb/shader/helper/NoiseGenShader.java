@@ -1,5 +1,6 @@
 package net.toancb.shader.helper;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
@@ -28,7 +29,12 @@ public class NoiseGenShader extends ShaderCoreApply {
 
     private void setupNoiseTextureFilter(String targetName) {
         Framebuffer fb = this.getFramebuffer(targetName);
-        fb.setFilterMode(GL11.GL_LINEAR);
+        RenderSystem.bindTexture(fb.getColorTextureId());
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+        RenderSystem.bindTexture(0);
     }
 
     public void addNoiseSampler(GraphicsCoreInstance shader) {

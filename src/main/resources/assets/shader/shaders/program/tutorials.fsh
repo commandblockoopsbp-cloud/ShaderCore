@@ -11,8 +11,7 @@ varying vec2 texCoord;
 
 void main() {
     vec2 newTex = texCoord - 0.5;
-    float mainColor = samplerVoronoi3D(vec3(newTex.x, Time / 60.0, texCoord.y) * 2.0);
-
+    float mainColor = samplerVoronoi2D(texCoord * 16.0).r;
 
     vec3 finalColor = vec3(mainColor);
 
