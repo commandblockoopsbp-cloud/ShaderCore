@@ -17,7 +17,7 @@ uniform float SafePadding;
 
 vec3 simple3D(sampler2D sampler, vec3 p) {
     vec2 safePad = TexSize.xy + 2.0 * SafePadding;
-    vec3 pos = fract(p);
+    vec3 pos = fract(p / BaseScale);
     vec2 ndcPos = (pos.xz * TexSize.xy + SafePadding) / safePad;
 
     float texYPos = pos.y * TexSize.z;
