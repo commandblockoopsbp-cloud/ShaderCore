@@ -6,21 +6,22 @@ uniform float BaseScale;
 uniform float Channel;
 uniform vec3 TexSize;
 uniform vec2 Size3D;
+uniform vec2 GridMax;
+uniform float SafePadding;
 
 varying vec2 texCoord;
 
 void main() {
-    vec2 texPos = texCoord * Size3D;
-    vec2 gridPos = texPos / TexSize.xy;
+    vec2 grid = texCoord * GridMax;
+    vec2 cell = floor(grid);
 
-    vec2 floorGrid = floor(gridPos);
+    vec2 uv = clamp((fract(grid) - 0.5) * ((TexSize.xy + 2.0 * SafePadding) / TexSize.xy), -0.5, 0.5) + 0.5;
 
-    float depthPos = Channel * (floorGrid.x + (Size3D.x / TexSize.x) * floorGrid.y);
+    float depthBase = Channel * (cell.x + GridMax.x * cell.y);
 
     vec4 result;
     for (int i = 0; i < 4; i++) {
-        vec3 pos = vec3(gridPos.x, (depthPos + 1.0 + float(i)) / TexSize.z, gridPos.y);
-        pos = fract(pos) * BaseScale;
+        vec3 pos = fract(vec3(uv.x, (depthBase + float(i)) / TexSize.z, uv.y)) * BaseScale;
         result[i] = fastPerlin3D(pos, BaseScale);
     }
 

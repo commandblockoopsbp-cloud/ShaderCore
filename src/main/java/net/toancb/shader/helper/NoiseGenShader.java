@@ -18,7 +18,9 @@ public class NoiseGenShader extends ShaderCoreApply {
     private static final NoiseGenShader INSTANCE = new NoiseGenShader();
     private static final Vector2i TEX_SIZE = new Vector2i(128, 128);
     private static final Vector2i SIZE_3D = new Vector2i(1024, 1024);
+    private static final int SAFETY_PADDING = 1;
     private static final Vector2i SIZE_2D = new Vector2i(512, 512);
+    private static final Vector2i GRID_MAX = SIZE_3D.divide(TEX_SIZE);
     private static final int CHANNEL = 3;
     private float baseScale = 16.0f;
 
@@ -42,6 +44,8 @@ public class NoiseGenShader extends ShaderCoreApply {
         int texZ = (SIZE_3D.x() / TEX_SIZE.x()) * (SIZE_3D.y() / TEX_SIZE.y()) * CHANNEL;
         shader.setUniform("TexSize", UType.VEC3).writeFloat(TEX_SIZE.x(), TEX_SIZE.y(), texZ);
         shader.setUniform("Size3D", UType.VEC2).writeFloat(SIZE_3D.x(), SIZE_3D.y());
+        shader.setUniform("GridMax", UType.VEC2).writeFloat(GRID_MAX.x(), GRID_MAX.y());
+        shader.setUniform("SafePadding", UType.FLOAT).writeFloat(SAFETY_PADDING);
         shader.setUniform("Size2D", UType.VEC2).writeFloat(SIZE_2D.x(), SIZE_2D.y());
     }
 
@@ -50,9 +54,15 @@ public class NoiseGenShader extends ShaderCoreApply {
     }
 
     protected void onGroupBuilt() {
-        this.getFramebuffer("3d_worley_noise").resize(SIZE_3D.x(), SIZE_3D.y(), Minecraft.ON_OSX);
+        this.getFramebuffer("3d_worley_noise").resize(
+                SIZE_3D.x() + 2 * SAFETY_PADDING * GRID_MAX.x(),
+                SIZE_3D.y() + 2 * SAFETY_PADDING * GRID_MAX.y(),
+                Minecraft.ON_OSX);
         this.getFramebuffer("2d_worley_noise").resize(SIZE_2D.x(), SIZE_2D.y(), Minecraft.ON_OSX);
-        this.getFramebuffer("3d_perlin_noise").resize(SIZE_3D.x(), SIZE_3D.y(), Minecraft.ON_OSX);
+        this.getFramebuffer("3d_perlin_noise").resize(
+                SIZE_3D.x() + 2 * SAFETY_PADDING * GRID_MAX.x(),
+                SIZE_3D.y() + 2 * SAFETY_PADDING * GRID_MAX.y(),
+                Minecraft.ON_OSX);
         this.getFramebuffer("2d_perlin_noise").resize(SIZE_2D.x(), SIZE_2D.y(), Minecraft.ON_OSX);
 
         this.setupNoiseTextureFilter("3d_worley_noise");

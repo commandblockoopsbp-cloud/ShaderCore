@@ -4,11 +4,15 @@
 
 uniform sampler2D DiffuseSampler;
 
+uniform float Time;
+uniform vec2 OutSize;
+
 varying vec2 texCoord;
-varying vec2 oneTexel;
 
 void main() {
-    vec3 mainColor = texture2D(WorleyNoise3DTexture, texCoord).rrr;
+    vec2 newTex = texCoord - 0.5;
+    float mainColor = samplerVoronoi3D(vec3(newTex.x, Time / 60.0, texCoord.y) * 2.0);
+
 
     vec3 finalColor = vec3(mainColor);
 

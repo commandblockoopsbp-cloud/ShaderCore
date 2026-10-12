@@ -12,23 +12,27 @@ uniform vec3 TexSize;
 uniform float ZSize;
 uniform vec2 Size3D;
 uniform vec2 Size2D;
+uniform vec2 GridMax;
+uniform float SafePadding;
 
 vec3 simple3D(sampler2D sampler, vec3 p) {
-    vec3 pos = fract(p / BaseScale);
+    vec2 safePad = TexSize.xy + 2.0 * SafePadding;
+    vec3 pos = fract(p);
+    vec2 ndcPos = (pos.xz * TexSize.xy + SafePadding) / safePad;
 
     float texYPos = pos.y * TexSize.z;
     float realYPos = texYPos / Channel;
 
-    float m = Size3D.x / TexSize.x;
-    vec2 gridPos = floor(vec2(mod(realYPos, m), realYPos / m));
+    vec2 gridPos = floor(vec2(mod(realYPos, GridMax.x), realYPos / GridMax.x));
 
-    vec2 texPos = (vec2(pos.x, pos.z) + gridPos) * TexSize.xy / Size3D;
+    vec2 texPos = (ndcPos + gridPos) / GridMax;
     vec4 color = texture2D(sampler, texPos);
 
-    float fY = fract(texYPos);
-    float testCase = floor(fY * Channel);
+    float testCase = mod(texYPos, Channel);
+    float fY = fract(testCase);
+    int index = int(floor(testCase));
 
-    vec2 resXy = (testCase < 1.0) ? color.xy : ((testCase < 2.0) ? color.yz : color.zw);
+    vec2 resXy = vec2(color[index], color[index+1]);
 
     return vec3(resXy, fY);
 }
