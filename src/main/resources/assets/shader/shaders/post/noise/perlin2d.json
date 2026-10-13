@@ -1,0 +1,18 @@
+{
+  "targets": [
+    {
+      "name": "perlin2d",
+      "scale_width": 1.0,
+      "scale_height": 1.0,
+      "is_resize": false
+    },
+    "swap"
+  ],
+  "passes": [
+    {
+      "name": "shader:noise/perlin2d",
+      "intarget": "swap",
+      "outtarget": "perlin2d"
+    }
+  ]
+}

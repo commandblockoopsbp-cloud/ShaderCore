@@ -5,7 +5,7 @@
     "dstrgb": "zero"
   },
   "vertex": "shader:blit_ndc",
-  "fragment": "shader:noise/perlin_noise_2d",
+  "fragment": "shader:noise/curl3d",
   "attributes": [
     "Position"
   ]

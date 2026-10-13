@@ -5,7 +5,7 @@
     "dstrgb": "zero"
   },
   "vertex": "shader:blit_ndc",
-  "fragment": "shader:noise/worley_noise_2d",
+  "fragment": "shader:noise/worley3d",
   "attributes": [
     "Position"
   ]

@@ -1,0 +1,12 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "zero"
+  },
+  "vertex": "shader:blit_ndc",
+  "fragment": "shader:noise/perlin2d",
+  "attributes": [
+    "Position"
+  ]
+}

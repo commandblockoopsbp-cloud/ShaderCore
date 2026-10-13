@@ -4,10 +4,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Vector3i;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.toancb.shader.ShaderCoreMod;
 import net.toancb.shader.shaders.GraphicsCoreInstance;
 import net.toancb.shader.shaders.ShaderCoreApply;
 import net.toancb.shader.shaders.UType;
@@ -15,19 +13,30 @@ import net.toancb.shader.shaders.pipeline.AuxConfig;
 import org.lwjgl.opengl.GL11;
 
 @OnlyIn(Dist.CLIENT)
-public class NoiseGenShader extends ShaderCoreApply {
-    private static final NoiseGenShader INSTANCE = new NoiseGenShader();
-    private static final Vector2i TEX_SIZE = new Vector2i(128, 128);
-    private static final Vector2i SIZE_3D = new Vector2i(1024, 1024);
-    private static final int SAFETY_PADDING = 1;
-    private static final Vector2i SIZE_2D = new Vector2i(512, 512);
-    private static final Vector2i GRID_MAX = SIZE_3D.divide(TEX_SIZE);
-    private static final int CHANNEL = 3;
-    private float baseScale = 16.0f;
+public abstract class NoiseGenShader extends ShaderCoreApply {
+    protected final String samplerName;
+    protected final String bufferName;
+    protected final ResourceLocation shaderLocation;
+    protected final float baseScale;
 
-    private NoiseGenShader() {}
+    public NoiseGenShader(String samplerName, String bufferName, ResourceLocation shaderLocation, float baseScale) {
+        if (samplerName == null || samplerName.isEmpty()) {
+            throw new IllegalArgumentException("Sampler name cannot be null or empty!");
+        }
+        if (bufferName == null || bufferName.isEmpty()) {
+            throw new IllegalArgumentException("Buffer name cannot be null or empty!");
+        }
+        if (baseScale <= 0) {
+            throw new IllegalArgumentException("BaseScale must be greater than 0!");
+        }
 
-    private void setupNoiseTextureFilter(String targetName) {
+        this.bufferName = bufferName;
+        this.samplerName = samplerName;
+        this.shaderLocation = shaderLocation;
+        this.baseScale = baseScale;
+    }
+
+    protected void setupNoiseTextureFilter(String targetName) {
         Framebuffer fb = this.getFramebuffer(targetName);
         RenderSystem.bindTexture(fb.getColorTextureId());
         RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
@@ -37,22 +46,9 @@ public class NoiseGenShader extends ShaderCoreApply {
         RenderSystem.bindTexture(0);
     }
 
-    public void addNoiseSampler(GraphicsCoreInstance shader) {
-        shader.setSampler("WorleyNoise3DTexture", this.getFramebuffer("3d_worley_noise")::getColorTextureId);
-        shader.setSampler("WorleyNoise2DTexture", this.getFramebuffer("2d_worley_noise")::getColorTextureId);
-        shader.setSampler("PerlinNoise3DTexture", this.getFramebuffer("3d_perlin_noise")::getColorTextureId);
-        shader.setSampler("PerlinNoise2DTexture", this.getFramebuffer("2d_perlin_noise")::getColorTextureId);
-    }
-
-    public void shareUniform(GraphicsCoreInstance shader) {
+    protected void shareUniform(GraphicsCoreInstance shader) {
         shader.setUniform("BaseScale", UType.FLOAT).writeFloat(this.baseScale);
-        shader.setUniform("Channel", UType.FLOAT).writeFloat(CHANNEL);
-        int texZ = (SIZE_3D.x() / TEX_SIZE.x()) * (SIZE_3D.y() / TEX_SIZE.y()) * CHANNEL;
-        shader.setUniform("TexSize", UType.VEC3).writeFloat(TEX_SIZE.x(), TEX_SIZE.y(), texZ);
-        shader.setUniform("Size3D", UType.VEC2).writeFloat(SIZE_3D.x(), SIZE_3D.y());
-        shader.setUniform("GridMax", UType.VEC2).writeFloat(GRID_MAX.x(), GRID_MAX.y());
-        shader.setUniform("SafePadding", UType.FLOAT).writeFloat(SAFETY_PADDING);
-        shader.setUniform("Size2D", UType.VEC2).writeFloat(SIZE_2D.x(), SIZE_2D.y());
+        shader.setSampler(this.samplerName, this.getFramebuffer(this.bufferName)::getColorTextureId);
     }
 
     protected void onApplyCustomUniform(GraphicsCoreInstance shader) {
@@ -60,21 +56,7 @@ public class NoiseGenShader extends ShaderCoreApply {
     }
 
     protected void onGroupBuilt() {
-        this.getFramebuffer("3d_worley_noise").resize(
-                SIZE_3D.x() + 2 * SAFETY_PADDING * GRID_MAX.x(),
-                SIZE_3D.y() + 2 * SAFETY_PADDING * GRID_MAX.y(),
-                Minecraft.ON_OSX);
-        this.getFramebuffer("2d_worley_noise").resize(SIZE_2D.x(), SIZE_2D.y(), Minecraft.ON_OSX);
-        this.getFramebuffer("3d_perlin_noise").resize(
-                SIZE_3D.x() + 2 * SAFETY_PADDING * GRID_MAX.x(),
-                SIZE_3D.y() + 2 * SAFETY_PADDING * GRID_MAX.y(),
-                Minecraft.ON_OSX);
-        this.getFramebuffer("2d_perlin_noise").resize(SIZE_2D.x(), SIZE_2D.y(), Minecraft.ON_OSX);
-
-        this.setupNoiseTextureFilter("3d_worley_noise");
-        this.setupNoiseTextureFilter("2d_worley_noise");
-        this.setupNoiseTextureFilter("3d_perlin_noise");
-        this.setupNoiseTextureFilter("2d_perlin_noise");
+        this.setupNoiseTextureFilter(this.bufferName);
     }
 
     protected void onPostInit() {
@@ -83,32 +65,15 @@ public class NoiseGenShader extends ShaderCoreApply {
     }
 
     public void init() {
-        super.initApply(
-                AuxConfig.nothing("3d_worley_noise"),
-                AuxConfig.nothing("2d_worley_noise"),
-                AuxConfig.nothing("3d_perlin_noise"),
-                AuxConfig.nothing("2d_perlin_noise")
-        );
+        super.initApply(AuxConfig.nothing(this.bufferName));
     }
 
     protected ResourceLocation getShaderLocation() {
-        return new ResourceLocation(ShaderCoreMod.MODID, "shaders/post/noise.json");
+        return this.shaderLocation;
     }
 
     @Override
     protected boolean requiresCustomState() {
         return false;
-    }
-
-    public static NoiseGenShader getInstance() {
-        return INSTANCE;
-    }
-
-    public float getBaseScale() {
-        return baseScale;
-    }
-
-    public void setBaseScale(float baseScale) {
-        this.baseScale = baseScale;
     }
 }
