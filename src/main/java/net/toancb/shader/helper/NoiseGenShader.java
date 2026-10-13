@@ -46,9 +46,12 @@ public abstract class NoiseGenShader extends ShaderCoreApply {
         RenderSystem.bindTexture(0);
     }
 
+    public void addNoiseSampler(GraphicsCoreInstance shader) {
+        shader.setSampler(this.samplerName, this.getFramebuffer(this.bufferName)::getColorTextureId);
+    }
+
     protected void shareUniform(GraphicsCoreInstance shader) {
         shader.setUniform("BaseScale", UType.FLOAT).writeFloat(this.baseScale);
-        shader.setSampler(this.samplerName, this.getFramebuffer(this.bufferName)::getColorTextureId);
     }
 
     protected void onApplyCustomUniform(GraphicsCoreInstance shader) {
