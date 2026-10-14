@@ -1,41 +1,47 @@
 #ifndef NOISE_GEN_GLSL
 #define NOISE_GEN_GLSL
 
-uniform float BaseScale;
-uniform vec2 TexSize;
-uniform vec2 NoiseSize;
-uniform vec2 GridMax;
-uniform float SafePadding;
+vec3 convert3D(mat4 info, vec2 texCoord) {
+    vec2 gridMax     = info[0].xy;
+    vec2 texSize     = info[1].xy;
+    float safePadding = info[2].x;
+    float texZ       = info[2].y;
+    float baseScale  = info[3].x;
 
-#define TEX_Z (GridMax.x * GridMax.y)
-
-vec3 convert3D(vec2 texCoord) {
-    vec2 grid = texCoord * GridMax;
+    vec2 grid = texCoord * gridMax;
     vec2 cell = floor(grid);
 
-    vec2 uv = (fract(grid) - 0.5) * ((TexSize.xy + 2.0 * SafePadding) / TexSize.xy) + 0.5;
+    vec2 uv = (fract(grid) - 0.5) * ((texSize + 2.0 * safePadding) / texSize) + 0.5;
 
-    float depthBase = cell.x + GridMax.x * cell.y;
+    float depthBase = cell.x + gridMax.x * cell.y;
 
-    return fract(vec3(uv, depthBase / TEX_Z) + 1.0) * BaseScale;
+    return fract(vec3(uv, depthBase / texZ) + 1.0) * baseScale;
 }
 
-vec2 yToTex(vec2 ndcPos, float texYPos) {
-    texYPos = mod(texYPos, TEX_Z);
-    vec2 gridPos = floor(vec2(mod(texYPos, GridMax.x), texYPos / GridMax.x));
-    return (ndcPos + gridPos) / GridMax;
+vec2 yToTex(mat4 info, vec2 ndcPos, float texYPos) {
+    vec2 gridMax = info[0].xy;
+    float texZ   = info[2].y;
+
+    texYPos = mod(texYPos, texZ);
+    vec2 gridPos = floor(vec2(mod(texYPos, gridMax.x), texYPos / gridMax.x));
+    return (ndcPos + gridPos) / gridMax;
 }
 
-vec4 simple3D(sampler2D sampler, vec3 p) {
-    vec2 safePad = TexSize.xy + 2.0 * SafePadding;
-    vec3 pos = fract(p / BaseScale);
+vec4 simple3D(mat4 info, sampler2D sampler, vec3 p) {
+    vec2 texSize     = info[1].xy;
+    float safePadding = info[2].x;
+    float texZ       = info[2].y;
+    float baseScale  = info[3].x;
+
+    vec2 safePad = texSize + 2.0 * safePadding;
+    vec3 pos = fract(p / baseScale);
     pos = vec3(pos.x, pos.z, pos.y);
-    vec2 ndcPos = (pos.xy * TexSize.xy + SafePadding) / safePad;
+    vec2 ndcPos = (pos.xy * texSize + safePadding) / safePad;
 
-    float texYPos = pos.z * TEX_Z;
+    float texYPos = pos.z * texZ;
 
-    vec2 texPos = yToTex(ndcPos, texYPos);
-    vec2 nextTexPos = yToTex(ndcPos, texYPos + 1.0);
+    vec2 texPos = yToTex(info, ndcPos, texYPos);
+    vec2 nextTexPos = yToTex(info, ndcPos, texYPos + 1.0);
 
     vec4 color = texture2D(sampler, texPos);
     vec4 nextColor = texture2D(sampler, nextTexPos);

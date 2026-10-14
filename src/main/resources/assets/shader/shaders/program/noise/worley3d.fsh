@@ -3,6 +3,8 @@
 #include "shader:shaders/misc/hash_function.glsl"
 #include "shader:shaders/misc/noise_for_3d.glsl"
 
+uniform mat4 Worley3DTextureInformation;
+
 varying vec2 texCoord;
 
 vec3 sampleVoronoiFeaturePoint(vec3 neighborOffset, vec3 period, vec3 gridIndex) {
@@ -35,10 +37,13 @@ float voronoiNoise3D(vec3 coord, float baseScale) {
 }
 
 void main() {
-    vec3 pos = convert3D(texCoord);
-    float r = voronoiNoise3D(pos, BaseScale);
-    float g = voronoiNoise3D(pos * 2.0, BaseScale * 2.0);
-    float b = voronoiNoise3D(pos * 0.5, BaseScale * 0.5);
-    float a = voronoiNoise3D(pos + vec3(12.34, 56.78, 90.12), BaseScale);
+    vec3 pos = convert3D(Worley3DTextureInformation, texCoord);
+    float baseScale = Worley3DTextureInformation[3].x;
+
+    float r = voronoiNoise3D(pos, baseScale);
+    float g = voronoiNoise3D(pos * 2.0, baseScale * 2.0);
+    float b = voronoiNoise3D(pos * 0.5, baseScale * 0.5);
+    float a = voronoiNoise3D(pos + vec3(12.34, 56.78, 90.12), baseScale);
+
     gl_FragColor = vec4(r, g, b, a);
 }

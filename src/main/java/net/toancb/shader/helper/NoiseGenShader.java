@@ -18,8 +18,9 @@ public abstract class NoiseGenShader extends ShaderCoreApply {
     protected final String bufferName;
     protected final ResourceLocation shaderLocation;
     protected final float baseScale;
+    protected final Vector2i noiseSize;
 
-    public NoiseGenShader(String samplerName, String bufferName, ResourceLocation shaderLocation, float baseScale) {
+    public NoiseGenShader(String samplerName, String bufferName, ResourceLocation shaderLocation, float baseScale, Vector2i noiseSize) {
         if (samplerName == null || samplerName.isEmpty()) {
             throw new IllegalArgumentException("Sampler name cannot be null or empty!");
         }
@@ -29,11 +30,15 @@ public abstract class NoiseGenShader extends ShaderCoreApply {
         if (baseScale <= 0) {
             throw new IllegalArgumentException("BaseScale must be greater than 0!");
         }
+        if (noiseSize.x() <= 0 || noiseSize.y() <= 0) {
+            throw new IllegalArgumentException("Noise size dimensions (x and y) must be greater than 0!");
+        }
 
         this.bufferName = bufferName;
         this.samplerName = samplerName;
         this.shaderLocation = shaderLocation;
         this.baseScale = baseScale;
+        this.noiseSize = noiseSize;
     }
 
     protected void setupNoiseTextureFilter(String targetName) {
@@ -46,19 +51,19 @@ public abstract class NoiseGenShader extends ShaderCoreApply {
         RenderSystem.bindTexture(0);
     }
 
-    public void addNoiseSampler(GraphicsCoreInstance shader) {
+    public void shareUniform(GraphicsCoreInstance shader) {
         shader.setSampler(this.samplerName, this.getFramebuffer(this.bufferName)::getColorTextureId);
+        this.onShareUniform(shader);
     }
 
-    protected void shareUniform(GraphicsCoreInstance shader) {
-        shader.setUniform("BaseScale", UType.FLOAT).writeFloat(this.baseScale);
-    }
+    protected void onShareUniform(GraphicsCoreInstance shader) {}
 
     protected void onApplyCustomUniform(GraphicsCoreInstance shader) {
-        this.shareUniform(shader);
+        this.onShareUniform(shader);
     }
 
     protected void onGroupBuilt() {
+        this.getFramebuffer(this.bufferName).resize(this.noiseSize.x(), this.noiseSize.y(), Minecraft.ON_OSX);
         this.setupNoiseTextureFilter(this.bufferName);
     }
 

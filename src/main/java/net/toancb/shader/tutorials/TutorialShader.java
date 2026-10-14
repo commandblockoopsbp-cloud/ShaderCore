@@ -15,11 +15,10 @@ import net.toancb.shader.shaders.pipeline.AuxConfig;
 public class TutorialShader extends ShaderCoreApply {
     private static final TutorialShader INSTANCE = new TutorialShader();
     private static final NoiseGenShader[] NOISE_GEN = {
-            NoiseGenManager.PERLIN3D,
             NoiseGenManager.WORLEY3D,
-            NoiseGenManager.CURL3D,
+            NoiseGenManager.PERLIN3D,
             NoiseGenManager.WORLEY2D,
-            NoiseGenManager.PERLIN2D,
+            NoiseGenManager.PERLIN2D
     };
 
     public void init() {
@@ -42,6 +41,9 @@ public class TutorialShader extends ShaderCoreApply {
     protected void onApplyCustomUniform(GraphicsCoreInstance shader) {
         float time = (System.nanoTime() * 1e-9f) % 20000f;
         shader.setUniform("Time", UType.FLOAT).writeFloat(time);
+        for (NoiseGenShader shader2 : NOISE_GEN) {
+            shader2.shareUniform(shader);
+        }
     }
 
     public static TutorialShader getInstance() {

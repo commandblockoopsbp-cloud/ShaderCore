@@ -3,6 +3,8 @@
 #include "shader:shaders/misc/hash_function.glsl"
 #include "shader:shaders/misc/noise_for_3d.glsl"
 
+uniform mat4 Perlin3DTextureInformation;
+
 varying vec2 texCoord;
 
 vec3 sampleGradientVector(vec3 cellOffset, vec3 period, vec3 gridIndex) {
@@ -31,10 +33,13 @@ float perlinNoise3D(vec3 coord, float baseScale) {
 }
 
 void main() {
-    vec3 pos = convert3D(texCoord);
-    float r = perlinNoise3D(pos, BaseScale);
-    float g = perlinNoise3D(pos * 2.0, BaseScale * 2.0);
-    float b = perlinNoise3D(pos * 4.0, BaseScale * 4.0);
-    float a = perlinNoise3D(pos + vec3(12.34, 56.78, 90.12), BaseScale);
+    vec3 pos = convert3D(Perlin3DTextureInformation, texCoord);
+    float baseScale  = Perlin3DTextureInformation[3].x;
+
+    float r = perlinNoise3D(pos, baseScale);
+    float g = perlinNoise3D(pos * 2.0, baseScale * 2.0);
+    float b = perlinNoise3D(pos * 4.0, baseScale * 4.0);
+    float a = perlinNoise3D(pos + vec3(12.34, 56.78, 90.12), baseScale);
+
     gl_FragColor = vec4(r, g, b, a);
 }

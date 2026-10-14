@@ -1,40 +1,33 @@
 package net.toancb.shader.helper;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.toancb.shader.ShaderCoreMod;
 import net.toancb.shader.shaders.GraphicsCoreInstance;
 import net.toancb.shader.shaders.UType;
 
 @OnlyIn(Dist.CLIENT)
 public class NoiseGen3DShader extends NoiseGenShader {
-    private final Vector2i noiseSize;
-    private final Vector2i texSize;
-    private final Vector2i gridSize;
+    private final Matrix4f inforMatrix;
     private static final int pad = 1;
 
     public NoiseGen3DShader(String samplerName, String bufferName, ResourceLocation shaderLocation, float baseScale, Vector2i noiseSize, Vector2i texSize) {
-        super(samplerName, bufferName, shaderLocation, baseScale);
-        this.noiseSize = noiseSize;
-        this.texSize = texSize;
-        this.gridSize = noiseSize.divide(texSize);
+        super(samplerName, bufferName, shaderLocation, baseScale, noiseSize);
+        Vector2i gridSize = noiseSize.divide(texSize);
+
+        int texZ = (gridSize.x() * gridSize.y());
+
+        this.inforMatrix = new Matrix4f(new float[]{
+                gridSize.x(), texSize.x(), pad,   baseScale,
+                gridSize.y(), texSize.y(), texZ,  0.0f,
+                0.0f,         0.0f,        0.0f,  0.0f,
+                0.0f,         0.0f,        0.0f,  0.0f
+        });
     }
 
-    public void shareUniform(GraphicsCoreInstance shader) {
-        super.shareUniform(shader);
-        shader.setUniform("TexSize", UType.VEC2).writeFloat(texSize.x(), texSize.y());
-        shader.setUniform("NoiseSize", UType.VEC2).writeFloat(noiseSize.x(), noiseSize.y());
-        shader.setUniform("GridMax", UType.VEC2).writeFloat(gridSize.x(), gridSize.y());
-        shader.setUniform("SafePadding", UType.FLOAT).writeFloat(pad);
-    }
-
-    protected void onApplyCustomUniform(GraphicsCoreInstance shader) {
-        this.shareUniform(shader);
-    }
-
-    protected void onGroupBuilt() {
-        this.getFramebuffer(this.bufferName).resize(this.noiseSize.x(), this.noiseSize.y(), Minecraft.ON_OSX);
-        super.onGroupBuilt();
+    protected void onShareUniform(GraphicsCoreInstance shader) {
+        shader.setUniform(this.samplerName + "Information", UType.MAT4).writeMat(this.inforMatrix);
     }
 }

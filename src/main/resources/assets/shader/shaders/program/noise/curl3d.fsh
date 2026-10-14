@@ -3,6 +3,8 @@
 #include "shader:shaders/misc/hash_function.glsl"
 #include "shader:shaders/misc/noise_for_3d.glsl"
 
+uniform mat4 Curl3DTextureInformation;
+
 varying vec2 texCoord;
 
 vec3 sampleGradientVector(vec3 cellOffset, vec3 period, vec3 gridIndex) {
@@ -77,12 +79,13 @@ float curlNoise3D_directional(vec3 coord, float baseScale) {
 }
 
 void main() {
-    vec3 pos = convert3D(texCoord);
+    vec3 pos = convert3D(Curl3DTextureInformation, texCoord);
+    float baseScale  = Curl3DTextureInformation[3].x;
 
-    float r = curlNoise3D_directional(pos, BaseScale);
-    float g = curlNoise3D_directional(pos * 2.0, BaseScale * 2.0);
-    float b = curlNoise3D_directional(pos * 4.0, BaseScale * 4.0);
-    float a = curlNoise3D_directional(pos + vec3(12.34, 56.78, 90.12), BaseScale);
+    float r = curlNoise3D_directional(pos, baseScale);
+    float g = curlNoise3D_directional(pos * 2.0, baseScale * 2.0);
+    float b = curlNoise3D_directional(pos * 4.0, baseScale * 4.0);
+    float a = curlNoise3D_directional(pos + vec3(12.34, 56.78, 90.12), baseScale);
 
     gl_FragColor = vec4(r, g, b, a);
 }
